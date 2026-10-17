@@ -73,6 +73,48 @@ type PaginatedSuppliers = {
   total: number
 }
 
+type PurchaseRequestStatus = 'draft' | 'pending' | 'approved' | 'rejected'
+
+type PurchaseRequestItem = {
+  id: number
+  purchase_request_id: number
+  item_id: number
+  quantity: number
+  unit_price: string
+  item: Item
+}
+
+type PurchaseRequest = {
+  id: number
+  request_number: string
+  supplier_id: number
+  status: PurchaseRequestStatus
+  notes: string | null
+  supplier: Supplier
+  items: PurchaseRequestItem[]
+  created_at: string
+  updated_at: string
+}
+
+type PaginatedPurchaseRequests = {
+  data: PurchaseRequest[]
+  current_page: number
+  last_page: number
+  total: number
+}
+
+type PurchaseRequestFormItem = {
+  item_id: string
+  quantity: string
+  unit_price: string
+}
+
+const emptyPurchaseRequestItem: PurchaseRequestFormItem = {
+  item_id: '',
+  quantity: '1',
+  unit_price: '0',
+}
+
 const emptySupplierForm = {
   name: '',
   contact_name: '',
@@ -91,6 +133,16 @@ const emptyForm = {
   reorder_level: '10',
   unit_price: '0',
   unit: 'piece',
+}
+
+const purchaseStatusBadge: Record<
+  PurchaseRequestStatus,
+  { label: string; className: string }
+> = {
+  draft: { label: 'Draft', className: 'neutral' },
+  pending: { label: 'Pending', className: 'low' },
+  approved: { label: 'Approved', className: 'healthy' },
+  rejected: { label: 'Rejected', className: 'danger' },
 }
 
 function App() {
@@ -116,6 +168,36 @@ function App() {
   const [showHistory, setShowHistory] = useState(false)
   const [historyLoading, setHistoryLoading] = useState(false)
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
+
+  
+  const [purchaseRequestSupplierOptions, setPurchaseRequestSupplierOptions] =
+    useState<Supplier[]>([])
+  const [purchaseRequestItemOptions, setPurchaseRequestItemOptions] =
+    useState<Item[]>([])
+
+  
+const [purchaseRequests, setPurchaseRequests] = useState<PurchaseRequest[]>([])
+  const [purchaseRequestPage, setPurchaseRequestPage] = useState(1)
+  const [purchaseRequestLastPage, setPurchaseRequestLastPage] = useState(1)
+  const [purchaseRequestTotal, setPurchaseRequestTotal] = useState(0)
+  const [purchaseRequestLoading, setPurchaseRequestLoading] = useState(false)
+  const [purchaseRequestError, setPurchaseRequestError] = useState('')
+  const [purchaseRequestSearch, setPurchaseRequestSearch] = useState('')
+  const [purchaseRequestStatusFilter, setPurchaseRequestStatusFilter] =
+    useState('all')
+
+  const [showPurchaseRequestForm, setShowPurchaseRequestForm] = useState(false)
+  const [editingPurchaseRequest, setEditingPurchaseRequest] =
+    useState<PurchaseRequest | null>(null)
+  const [purchaseRequestSaving, setPurchaseRequestSaving] = useState(false)
+  const [purchaseRequestFormError, setPurchaseRequestFormError] = useState('')
+
+  const [purchaseRequestSupplierId, setPurchaseRequestSupplierId] = useState('')
+  const [purchaseRequestNotes, setPurchaseRequestNotes] = useState('')
+  const [purchaseRequestItems, setPurchaseRequestItems] = useState<
+    PurchaseRequestFormItem[]
+  >([{ ...emptyPurchaseRequestItem }])
+
   const [supplierSearch, setSupplierSearch] = useState('')
   const [supplierPage, setSupplierPage] = useState(1)
   const [supplierLastPage, setSupplierLastPage] = useState(1)
@@ -128,10 +210,11 @@ function App() {
   const [supplierForm, setSupplierForm] = useState(emptySupplierForm)
   const [supplierFormError, setSupplierFormError] = useState('')
   const [supplierSaving, setSupplierSaving] = useState(false)
+  
 
-  const [activePage, setActivePage] = useState<'inventory' | 'suppliers'>(
-    'inventory',
-  )
+ const [activePage, setActivePage] = useState<
+    'inventory' | 'suppliers' | 'purchases'
+  >('inventory')
 
   async function loadItems(pageNumber = page) {
     setLoading(true)
@@ -171,6 +254,19 @@ function App() {
         .some((value) => value.toLowerCase().includes(term)),
     )
   }, [items, search])
+
+  const filteredPurchaseRequests = useMemo(() => {
+  const term = purchaseRequestSearch.trim().toLowerCase()
+
+  return purchaseRequests.filter(
+    (request) =>
+      (!term ||
+        request.request_number.toLowerCase().includes(term) ||
+        request.supplier.name.toLowerCase().includes(term)) &&
+      (purchaseRequestStatusFilter === 'all' ||
+        request.status === purchaseRequestStatusFilter),
+  )
+}, [purchaseRequests, purchaseRequestSearch, purchaseRequestStatusFilter])
 
   const filteredSuppliers = useMemo(() => {
   const term = supplierSearch.trim().toLowerCase()
@@ -226,6 +322,208 @@ function App() {
     setSupplierLoading(false)
   }
 }
+
+
+async function loadPurchaseRequests(pageNumber = purchaseRequestPage) {
+  setPurchaseRequestLoading(true)
+  setPurchaseRequestError('')
+
+  try {
+    const response = await fetch(
+      `/api/purchase-requests?page=${pageNumber}`,
+      { headers: { Accept: 'application/json' } },
+    )
+
+    if (!response.ok) {
+      throw new Error('Unable to load purchase requests.')
+    }
+
+    const result: PaginatedPurchaseRequests = await response.json()
+
+    setPurchaseRequests(result.data)
+    setPurchaseRequestPage(result.current_page)
+    setPurchaseRequestLastPage(result.last_page)
+    setPurchaseRequestTotal(result.total)
+  } catch (err) {
+    setPurchaseRequestError(
+      err instanceof Error
+        ? err.message
+        : 'Unable to load purchase requests.',
+    )
+  } finally {
+    setPurchaseRequestLoading(false)
+  }
+}
+
+  async function loadPurchaseRequestOptions() {
+    try {
+      const [supplierResponse, itemResponse] = await Promise.all([
+        fetch('/api/suppliers?per_page=1000', {
+          headers: { Accept: 'application/json' },
+        }),
+        fetch('/api/items?per_page=1000', {
+          headers: { Accept: 'application/json' },
+        }),
+      ])
+
+      if (!supplierResponse.ok || !itemResponse.ok) {
+        throw new Error('Unable to load suppliers or inventory items.')
+      }
+
+      const supplierResult: PaginatedSuppliers = await supplierResponse.json()
+      const itemResult: PaginatedItems = await itemResponse.json()
+
+      setPurchaseRequestSupplierOptions(
+        supplierResult.data.filter((supplier) => supplier.status === 'active'),
+      )
+      setPurchaseRequestItemOptions(itemResult.data)
+    } catch (err) {
+      setPurchaseRequestFormError(
+        err instanceof Error
+          ? err.message
+          : 'Unable to load form options.',
+      )
+    }
+  }
+
+  
+async function savePurchaseRequest(event: React.FormEvent<HTMLFormElement>) {
+  event.preventDefault()
+  setPurchaseRequestSaving(true)
+  setPurchaseRequestFormError('')
+
+  const payload = {
+    supplier_id: Number(purchaseRequestSupplierId),
+    notes: purchaseRequestNotes.trim() || null,
+    items: purchaseRequestItems.map((line) => ({
+      item_id: Number(line.item_id),
+      quantity: Number(line.quantity),
+      unit_price: Number(line.unit_price),
+    })),
+  }
+
+  try {
+    const url = editingPurchaseRequest
+      ? `/api/purchase-requests/${editingPurchaseRequest.id}`
+      : '/api/purchase-requests'
+
+    const response = await fetch(url, {
+      method: editingPurchaseRequest ? 'PUT' : 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    })
+
+    const result = await response.json()
+
+    if (!response.ok) {
+      const validationMessage = result.errors
+        ? Object.values(result.errors).flat().join(' ')
+        : result.message
+
+      throw new Error(
+        validationMessage || 'Unable to save purchase request.',
+      )
+    }
+
+    setShowPurchaseRequestForm(false)
+    setEditingPurchaseRequest(null)
+    setPurchaseRequestSupplierId('')
+    setPurchaseRequestNotes('')
+    setPurchaseRequestItems([{ ...emptyPurchaseRequestItem }])
+
+    await loadPurchaseRequests(1)
+  } catch (err) {
+    setPurchaseRequestFormError(
+      err instanceof Error
+        ? err.message
+        : 'Unable to save purchase request.',
+    )
+  } finally {
+    setPurchaseRequestSaving(false)
+  }
+}
+
+  async function updatePurchaseRequestStatus(
+    request: PurchaseRequest,
+    status: PurchaseRequestStatus,
+  ) {
+    setPurchaseRequestError('')
+
+    try {
+      const response = await fetch(
+        `/api/purchase-requests/${request.id}/status`,
+        {
+          method: 'PATCH',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ status }),
+        },
+      )
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(
+          result.message || 'Unable to update request status.',
+        )
+      }
+
+      await loadPurchaseRequests()
+    } catch (err) {
+      setPurchaseRequestError(
+        err instanceof Error
+          ? err.message
+          : 'Unable to update request status.',
+      )
+    }
+  }
+
+  async function deletePurchaseRequest(request: PurchaseRequest) {
+    const confirmed = window.confirm(
+      `Delete purchase request ${request.request_number}?`,
+    )
+
+    if (!confirmed) return
+
+    setPurchaseRequestError('')
+
+    try {
+      const response = await fetch(
+        `/api/purchase-requests/${request.id}`,
+        {
+          method: 'DELETE',
+          headers: { Accept: 'application/json' },
+        },
+      )
+
+      if (!response.ok) {
+        const result = await response.json()
+        throw new Error(
+          result.message || 'Unable to delete purchase request.',
+        )
+      }
+
+      const nextPage =
+        purchaseRequests.length === 1 && purchaseRequestPage > 1
+          ? purchaseRequestPage - 1
+          : purchaseRequestPage
+
+      await loadPurchaseRequests(nextPage)
+    } catch (err) {
+      setPurchaseRequestError(
+        err instanceof Error
+          ? err.message
+          : 'Unable to delete purchase request.',
+      )
+    }
+  }
+
+
 
   async function saveSupplier(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -539,9 +837,21 @@ function App() {
             <Truck size={18} /> Suppliers
             <span className="nav-count">{supplierTotal}</span>
           </a>
-          <a className="nav-link" href="#purchases">
-            <ShoppingCart size={18} /> Purchase requests
-          </a>
+          
+          <a
+          className={`nav-link ${activePage === 'purchases' ? 'active' : ''}`}
+          href="#purchases"
+          onClick={(event) => {
+            event.preventDefault()
+            setActivePage('purchases')
+            void loadPurchaseRequests(1)
+            void loadPurchaseRequestOptions()
+          }}
+        >
+          <ShoppingCart size={18} /> Purchase requests
+          <span className="nav-count">{purchaseRequestTotal}</span>
+        </a>
+
         </nav>
 
         <div className="sidebar-bottom">
@@ -565,7 +875,11 @@ function App() {
         <header className="topbar">
           <div className="breadcrumb">
             Workspace <span>/</span>{' '}
-            {activePage === 'inventory' ? 'Inventory' : 'Suppliers'}
+            {activePage === 'inventory'
+            ? 'Inventory'
+            : activePage === 'suppliers'
+              ? 'Suppliers'
+              : 'Purchase requests'}
           </div>
           <div className="topbar-right">
             <span className="status-dot" /> API connected
@@ -733,7 +1047,7 @@ function App() {
                         </td>
                         <td>
                         <div className="row-actions">
-                                                    <button
+                        <button
                           type="button"
                           className="edit-button"
                           onClick={() => {
@@ -997,6 +1311,249 @@ function App() {
             </>
           )}
 
+          {activePage === 'purchases' && (
+  <>
+    <div className="page-heading">
+      <div>
+        <div className="eyebrow">PROCUREMENT</div>
+        <h1>Purchase requests</h1>
+        <p>Create and track requests for inventory purchases.</p>
+      </div>
+      <button
+        className="primary-button"
+        onClick={() => {
+          setEditingPurchaseRequest(null)
+          setPurchaseRequestSupplierId('')
+          setPurchaseRequestNotes('')
+          setPurchaseRequestItems([{ ...emptyPurchaseRequestItem }])
+          setPurchaseRequestFormError('')
+          void loadPurchaseRequestOptions()
+          setShowPurchaseRequestForm(true)
+        }}
+      >
+        <Plus size={17} /> New request
+      </button>
+    </div>
+
+    {purchaseRequestError && (
+      <div className="error-banner">
+        <AlertTriangle size={18} />
+        <span>{purchaseRequestError}</span>
+        <button onClick={() => void loadPurchaseRequests()}>Retry</button>
+      </div>
+    )}
+
+    <section className="inventory-panel" id="purchases">
+      <div className="panel-heading">
+        <div>
+          <h2>All purchase requests</h2>
+          <p>Requests for inventory purchases from your suppliers.</p>
+        </div>
+        <button
+          className="secondary-button"
+          onClick={() => void loadPurchaseRequests()}
+          disabled={purchaseRequestLoading}
+        >
+          <ArrowDownToLine size={16} /> Refresh
+        </button>
+      </div>
+
+      <div className="table-toolbar">
+        <div className="toolbar-group">
+          <label className="search-box">
+            <Search size={17} />
+            <input
+              value={purchaseRequestSearch}
+              onChange={(event) => setPurchaseRequestSearch(event.target.value)}
+              placeholder="Search request number or supplier..."
+            />
+            {purchaseRequestSearch && (
+              <button
+                aria-label="Clear search"
+                onClick={() => setPurchaseRequestSearch('')}
+              >
+                <X size={15} />
+              </button>
+            )}
+          </label>
+
+          <select
+            className="filter-select"
+            value={purchaseRequestStatusFilter}
+            onChange={(event) => setPurchaseRequestStatusFilter(event.target.value)}
+            aria-label="Filter by status"
+          >
+            <option value="all">All statuses</option>
+            <option value="draft">Draft</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+        <span className="result-count">{purchaseRequestTotal} records</span>
+      </div>
+
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>REQUEST</th>
+              <th>SUPPLIER</th>
+              <th>ITEMS</th>
+              <th>TOTAL</th>
+              <th>STATUS</th>
+              <th>DATE</th>
+              <th>ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody>
+            {purchaseRequestLoading ? (
+              <tr>
+                <td colSpan={7} className="empty-state">Loading purchase requests...</td>
+              </tr>
+            ) : filteredPurchaseRequests.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="empty-state">
+                  <span className="empty-icon"><ShoppingCart size={25} /></span>
+                  <strong>
+                    {purchaseRequestSearch || purchaseRequestStatusFilter !== 'all'
+                      ? 'No matching requests'
+                      : 'No purchase requests yet'}
+                  </strong>
+                  <span>
+                    {purchaseRequestSearch || purchaseRequestStatusFilter !== 'all'
+                      ? 'Try another search term or status.'
+                      : 'Create your first request to get started.'}
+                  </span>
+                </td>
+              </tr>
+            ) : (
+              filteredPurchaseRequests.map((request) => {
+                const requestTotal = request.items.reduce(
+                  (sum, line) => sum + line.quantity * Number(line.unit_price),
+                  0,
+                )
+                const badge = purchaseStatusBadge[request.status]
+
+                return (
+                  <tr key={request.id}>
+                    <td>
+                      <div className="item-cell">
+                        <span className="item-avatar"><ShoppingCart size={17} /></span>
+                        <span>
+                          <strong>{request.request_number}</strong>
+                          <small>{request.notes || 'No notes'}</small>
+                        </span>
+                      </div>
+                    </td>
+                    <td>{request.supplier.name}</td>
+                    <td>{request.items.length}</td>
+                    <td className="price-cell">{currency(requestTotal)}</td>
+                    <td>
+                      <span className={`stock-badge ${badge.className}`}>
+                        <span /> {badge.label}
+                      </span>
+                    </td>
+                    <td>{new Date(request.created_at).toLocaleDateString()}</td>
+                    <td>
+                      <div className="row-actions">
+                        {request.status === 'draft' && (
+                          <>
+                            <button
+                              type="button"
+                              className="edit-button"
+                              onClick={() => {
+                                setEditingPurchaseRequest(request)
+                                setPurchaseRequestSupplierId(String(request.supplier_id))
+                                setPurchaseRequestNotes(request.notes ?? '')
+                                setPurchaseRequestItems(
+                                  request.items.map((line) => ({
+                                    item_id: String(line.item_id),
+                                    quantity: String(line.quantity),
+                                    unit_price: String(line.unit_price),
+                                  })),
+                                )
+                                setPurchaseRequestFormError('')
+                                void loadPurchaseRequestOptions()
+                                setShowPurchaseRequestForm(true)
+                              }}
+                            >
+                              Edit
+                            </button>
+
+                            <button
+                              type="button"
+                              className="edit-button"
+                              onClick={() => void updatePurchaseRequestStatus(request, 'pending')}
+                            >
+                              Submit
+                            </button>
+
+                            <button
+                              type="button"
+                              className="delete-button"
+                              onClick={() => void deletePurchaseRequest(request)}
+                            >
+                              <Trash2 size={16} /> Delete
+                            </button>
+                          </>
+                        )}
+
+                        {request.status === 'pending' && (
+                          <>
+                            <button
+                              type="button"
+                              className="edit-button"
+                              onClick={() => void updatePurchaseRequestStatus(request, 'approved')}
+                            >
+                              Approve
+                            </button>
+
+                            <button
+                              type="button"
+                              className="delete-button"
+                              onClick={() => void updatePurchaseRequestStatus(request, 'rejected')}
+                            >
+                              Reject
+                            </button>
+                          </>
+                        )}
+                        {(request.status === 'approved' || request.status === 'rejected') && (
+                          <span className="unit-label">—</span>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="table-footer">
+        <span>Page {purchaseRequestPage} of {purchaseRequestLastPage}</span>
+        <div className="pagination">
+          <button
+            disabled={purchaseRequestPage <= 1 || purchaseRequestLoading}
+            onClick={() => void loadPurchaseRequests(purchaseRequestPage - 1)}
+            aria-label="Previous purchase request page"
+          >
+            <ChevronLeft size={17} />
+          </button>
+          <span>{purchaseRequestPage}</span>
+          <button
+            disabled={purchaseRequestPage >= purchaseRequestLastPage || purchaseRequestLoading}
+            onClick={() => void loadPurchaseRequests(purchaseRequestPage + 1)}
+            aria-label="Next purchase request page"
+          >
+            <ChevronRight size={17} />
+          </button>
+        </div>
+      </div>
+    </section>
+  </>
+)}
           <footer
           className="page-footer"
           style={{ display: activePage === 'inventory' ? undefined : 'none' }}
@@ -1455,6 +2012,202 @@ function App() {
         </section>
       </div>
     )}
+
+    
+    {showPurchaseRequestForm && (
+  <div className="modal-backdrop">
+    <section className="item-modal" role="dialog" aria-modal="true" aria-labelledby="purchase-modal-title">
+      <div className="modal-heading">
+        <div>
+          <div className="eyebrow">PROCUREMENT</div>
+          <h2 id="purchase-modal-title">
+            {editingPurchaseRequest ? 'Edit purchase request' : 'New purchase request'}
+          </h2>
+          <p>Choose a supplier and the items you want to order.</p>
+        </div>
+        <button
+          type="button"
+          className="icon-button"
+          aria-label="Close purchase request form"
+          onClick={() => {
+            setShowPurchaseRequestForm(false)
+            setEditingPurchaseRequest(null)
+            setPurchaseRequestFormError('')
+          }}
+        >
+          <X size={19} />
+        </button>
+      </div>
+
+      <form onSubmit={savePurchaseRequest}>
+        <div className="form-grid">
+          <label className="full-field">
+            Supplier <span>*</span>
+            <select
+              required
+              value={purchaseRequestSupplierId}
+              onChange={(event) => setPurchaseRequestSupplierId(event.target.value)}
+            >
+              <option value="">Select a supplier</option>
+              {purchaseRequestSupplierOptions.map((supplier) => (
+                <option key={supplier.id} value={supplier.id}>{supplier.name}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="full-field">
+            Notes
+            <textarea
+              rows={3}
+              value={purchaseRequestNotes}
+              onChange={(event) => setPurchaseRequestNotes(event.target.value)}
+              placeholder="Optional purchasing notes"
+            />
+          </label>
+        </div>
+
+        <div className="form-section-heading">
+          <h3>Requested items</h3>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() =>
+              setPurchaseRequestItems((current) => [...current, { ...emptyPurchaseRequestItem }])
+            }
+          >
+            <Plus size={16} /> Add item
+          </button>
+        </div>
+
+        {purchaseRequestItems.map((line, index) => (
+          <div className="form-grid line-grid" key={index}>
+            <label>
+              Inventory item <span>*</span>
+              <select
+                required
+                value={line.item_id}
+                onChange={(event) => {
+                  const itemId = event.target.value
+                  const selected = purchaseRequestItemOptions.find(
+                    (item) => String(item.id) === itemId,
+                  )
+                  setPurchaseRequestItems((current) =>
+                    current.map((currentLine, i) =>
+                      i === index
+                        ? {
+                            ...currentLine,
+                            item_id: itemId,
+                            unit_price: selected
+                              ? String(selected.unit_price ?? 0)
+                              : currentLine.unit_price,
+                          }
+                        : currentLine,
+                    ),
+                  )
+                }}
+              >
+                <option value="">Select an item</option>
+                {purchaseRequestItemOptions.map((item) => (
+                  <option key={item.id} value={item.id}>{item.name}</option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              Quantity <span>*</span>
+              <input
+                type="number"
+                min="1"
+                step="1"
+                required
+                value={line.quantity}
+                onChange={(event) =>
+                  setPurchaseRequestItems((current) =>
+                    current.map((currentLine, i) =>
+                      i === index ? { ...currentLine, quantity: event.target.value } : currentLine,
+                    ),
+                  )
+                }
+              />
+            </label>
+
+            <label>
+              Unit price <span>*</span>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                required
+                value={line.unit_price}
+                onChange={(event) =>
+                  setPurchaseRequestItems((current) =>
+                    current.map((currentLine, i) =>
+                      i === index ? { ...currentLine, unit_price: event.target.value } : currentLine,
+                    ),
+                  )
+                }
+              />
+            </label>
+
+            <button
+              type="button"
+              className="delete-button"
+              aria-label={`Remove item ${index + 1}`}
+              disabled={purchaseRequestItems.length === 1}
+              onClick={() =>
+                setPurchaseRequestItems((current) =>
+                  current.filter((_, i) => i !== index),
+                )
+              }
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
+        ))}
+
+        {purchaseRequestFormError && (
+          <div className="form-error">
+            <AlertTriangle size={16} /> {purchaseRequestFormError}
+          </div>
+        )}
+
+        <div className="modal-actions">
+          <span className="estimated-total">
+            Estimated total
+            <strong>
+              {currency(
+                purchaseRequestItems.reduce(
+                  (total, line) =>
+                    total + Number(line.quantity || 0) * Number(line.unit_price || 0),
+                  0,
+                ),
+              )}
+            </strong>
+          </span>
+
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => {
+              setShowPurchaseRequestForm(false)
+              setEditingPurchaseRequest(null)
+              setPurchaseRequestFormError('')
+            }}
+          >
+            Cancel
+          </button>
+          <button type="submit" className="primary-button" disabled={purchaseRequestSaving}>
+            {purchaseRequestSaving
+              ? 'Saving...'
+              : editingPurchaseRequest
+                ? 'Save changes'
+                : 'Create request'}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+)}
   
     </div>
   )
