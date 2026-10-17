@@ -53,6 +53,36 @@ type PaginatedMovements = {
   total: number
 }
 
+type Supplier = {
+  id: number
+  name: string
+  contact_name: string | null
+  email: string | null
+  phone: string | null
+  address: string | null
+  notes: string | null
+  status: 'active' | 'inactive'
+  created_at: string
+  updated_at: string
+}
+
+type PaginatedSuppliers = {
+  data: Supplier[]
+  current_page: number
+  last_page: number
+  total: number
+}
+
+const emptySupplierForm = {
+  name: '',
+  contact_name: '',
+  email: '',
+  phone: '',
+  address: '',
+  notes: '',
+  status: 'active' as 'active' | 'inactive',
+}
+
 const emptyForm = {
   sku: '',
   name: '',
@@ -85,6 +115,23 @@ function App() {
   const [movements, setMovements] = useState<InventoryMovement[]>([])
   const [showHistory, setShowHistory] = useState(false)
   const [historyLoading, setHistoryLoading] = useState(false)
+  const [suppliers, setSuppliers] = useState<Supplier[]>([])
+  const [supplierSearch, setSupplierSearch] = useState('')
+  const [supplierPage, setSupplierPage] = useState(1)
+  const [supplierLastPage, setSupplierLastPage] = useState(1)
+  const [supplierTotal, setSupplierTotal] = useState(0)
+  const [supplierLoading, setSupplierLoading] = useState(false)
+  const [supplierError, setSupplierError] = useState('')
+
+  const [showSupplierForm, setShowSupplierForm] = useState(false)
+  const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null)
+  const [supplierForm, setSupplierForm] = useState(emptySupplierForm)
+  const [supplierFormError, setSupplierFormError] = useState('')
+  const [supplierSaving, setSupplierSaving] = useState(false)
+
+  const [activePage, setActivePage] = useState<'inventory' | 'suppliers'>(
+    'inventory',
+  )
 
   async function loadItems(pageNumber = page) {
     setLoading(true)
@@ -125,6 +172,21 @@ function App() {
     )
   }, [items, search])
 
+  const filteredSuppliers = useMemo(() => {
+  const term = supplierSearch.trim().toLowerCase()
+
+    if (!term) return suppliers
+
+    return suppliers.filter((supplier) =>
+      [
+        supplier.name,
+        supplier.contact_name ?? '',
+        supplier.email ?? '',
+        supplier.phone ?? '',
+      ].some((value) => value.toLowerCase().includes(term)),
+    )
+  }, [suppliers, supplierSearch])
+
   const lowStock = items.filter(
     (item) => item.quantity <= item.reorder_level,
   ).length
@@ -133,6 +195,114 @@ function App() {
     (sum, item) => sum + item.quantity * Number(item.unit_price),
     0,
   )
+
+
+
+  async function loadSuppliers(pageNumber = supplierPage) {
+  setSupplierLoading(true)
+  setSupplierError('')
+
+  try {
+    const response = await fetch(
+      `/api/suppliers?page=${pageNumber}`,
+      { headers: { Accept: 'application/json' } },
+    )
+
+    if (!response.ok) {
+      throw new Error('Unable to load suppliers.')
+    }
+
+    const result: PaginatedSuppliers = await response.json()
+
+    setSuppliers(result.data)
+    setSupplierPage(result.current_page)
+    setSupplierLastPage(result.last_page)
+    setSupplierTotal(result.total)
+  } catch (err) {
+    setSupplierError(
+      err instanceof Error ? err.message : 'Unable to load suppliers.',
+    )
+  } finally {
+    setSupplierLoading(false)
+  }
+}
+
+  async function saveSupplier(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setSupplierSaving(true)
+    setSupplierFormError('')
+
+    try {
+      const isEditing = editingSupplier !== null
+      const url = isEditing
+        ? `/api/suppliers/${editingSupplier.id}`
+        : '/api/suppliers'
+
+      const response = await fetch(url, {
+        method: isEditing ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify(supplierForm),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        const messages = result.errors
+          ? Object.values(result.errors).flat().join(' ')
+          : result.message ?? 'Unable to save supplier.'
+
+        throw new Error(String(messages))
+      }
+
+      setShowSupplierForm(false)
+      setEditingSupplier(null)
+      setSupplierForm(emptySupplierForm)
+
+      await loadSuppliers(isEditing ? supplierPage : 1)
+    } catch (err) {
+      setSupplierFormError(
+        err instanceof Error ? err.message : 'Something went wrong.',
+      )
+    } finally {
+      setSupplierSaving(false)
+    }
+  }
+
+  async function deleteSupplier(supplier: Supplier) {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${supplier.name}"?`,
+    )
+
+    if (!confirmed) return
+
+    setSupplierError('')
+
+    try {
+      const response = await fetch(`/api/suppliers/${supplier.id}`, {
+        method: 'DELETE',
+        headers: { Accept: 'application/json' },
+      })
+
+      if (!response.ok) {
+        const result = await response.json().catch(() => ({}))
+        throw new Error(result.message ?? 'Unable to delete supplier.')
+      }
+
+      const nextPage =
+        suppliers.length === 1 && supplierPage > 1
+          ? supplierPage - 1
+          : supplierPage
+
+      await loadSuppliers(nextPage)
+    } catch (err) {
+      setSupplierError(
+        err instanceof Error ? err.message : 'Failed to delete supplier.',
+      )
+    }
+  }
 
   async function createItem(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -346,12 +516,28 @@ function App() {
           <a className="nav-link" href="#overview">
             <LayoutDashboard size={18} /> Overview
           </a>
-          <a className="nav-link active" href="#inventory">
+          <a
+            className={`nav-link ${activePage === 'inventory' ? 'active' : ''}`}
+            href="#inventory"
+            onClick={(event) => {
+              event.preventDefault()
+              setActivePage('inventory')
+            }}
+          >
             <Package size={18} /> Inventory
             <span className="nav-count">{total}</span>
           </a>
-          <a className="nav-link" href="#suppliers">
+          <a
+            className={`nav-link ${activePage === 'suppliers' ? 'active' : ''}`}
+            href="#suppliers"
+            onClick={(event) => {
+              event.preventDefault()
+              setActivePage('suppliers')
+              void loadSuppliers(1)
+            }}
+          >
             <Truck size={18} /> Suppliers
+            <span className="nav-count">{supplierTotal}</span>
           </a>
           <a className="nav-link" href="#purchases">
             <ShoppingCart size={18} /> Purchase requests
@@ -377,7 +563,10 @@ function App() {
 
       <main className="main-content">
         <header className="topbar">
-          <div className="breadcrumb">Workspace <span>/</span> Inventory</div>
+          <div className="breadcrumb">
+            Workspace <span>/</span>{' '}
+            {activePage === 'inventory' ? 'Inventory' : 'Suppliers'}
+          </div>
           <div className="topbar-right">
             <span className="status-dot" /> API connected
             <div className="avatar">JD</div>
@@ -385,7 +574,10 @@ function App() {
         </header>
 
         <section className="page-content">
-          <div className="page-heading">
+          <div
+              className="page-heading"
+              style={{ display: activePage === 'inventory' ? undefined : 'none' }}
+          >
             <div>
               <div className="eyebrow">INVENTORY MANAGEMENT</div>
               <h1>Inventory</h1>
@@ -408,7 +600,10 @@ function App() {
             </div>
           )}
 
-          <div className="stats-grid">
+          <div
+            className="stats-grid"
+            style={{ display: activePage === 'inventory' ? undefined : 'none' }}
+          >
             <article className="stat-card">
               <div className="stat-top">
                 <span>Total items</span>
@@ -450,7 +645,11 @@ function App() {
             </article>
           </div>
 
-          <section className="inventory-panel" id="inventory">
+          <section
+            className="inventory-panel"
+            id="inventory"
+            style={{ display: activePage === 'inventory' ? undefined : 'none' }}
+          >
             <div className="panel-heading">
               <div>
                 <h2>All inventory</h2>
@@ -602,7 +801,208 @@ function App() {
               </div>
             </div>
           </section>
-          <footer className="page-footer">ERPFlow <span>·</span> Inventory management <span>·</span> Development build</footer>
+          
+          {activePage === 'suppliers' && (
+            <>
+              <div className="page-heading">
+                <div>
+                  <div className="eyebrow">SUPPLIER MANAGEMENT</div>
+                  <h1>Suppliers</h1>
+                  <p>Manage supplier contacts and their current status.</p>
+                </div>
+
+                <button
+                  className="primary-button"
+                  onClick={() => {
+                    setEditingSupplier(null)
+                    setSupplierForm(emptySupplierForm)
+                    setSupplierFormError('')
+                    setShowSupplierForm(true)
+                  }}
+                >
+                  <Plus size={17} /> Add supplier
+                </button>
+              </div>
+
+              {supplierError && (
+                <div className="error-banner">
+                  <AlertTriangle size={18} />
+                  <span>{supplierError}</span>
+                  <button onClick={() => void loadSuppliers(supplierPage)}>
+                    Retry
+                  </button>
+                </div>
+              )}
+
+              <section className="inventory-panel" id="suppliers">
+                <div className="panel-heading">
+                  <div>
+                    <h2>All suppliers</h2>
+                    <p>Supplier directory and contact information.</p>
+                  </div>
+                  <button
+                    className="secondary-button"
+                    onClick={() => void loadSuppliers(supplierPage)}
+                    disabled={supplierLoading}
+                  >
+                    <ArrowDownToLine size={16} /> Refresh
+                  </button>
+                </div>
+
+                <div className="table-toolbar">
+                  <label className="search-box">
+                    <Search size={17} />
+                    <input
+                      value={supplierSearch}
+                      onChange={(event) => setSupplierSearch(event.target.value)}
+                      placeholder="Search suppliers, contacts, email..."
+                    />
+                    {supplierSearch && (
+                      <button
+                        aria-label="Clear search"
+                        onClick={() => setSupplierSearch('')}
+                      >
+                        <X size={15} />
+                      </button>
+                    )}
+                  </label>
+                  <span className="result-count">{supplierTotal} records</span>
+                </div>
+
+                <div className="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>SUPPLIER</th>
+                        <th>CONTACT</th>
+                        <th>EMAIL</th>
+                        <th>PHONE</th>
+                        <th>STATUS</th>
+                        <th>ACTIONS</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {supplierLoading ? (
+                        <tr>
+                          <td colSpan={6} className="empty-state">
+                            Loading suppliers...
+                          </td>
+                        </tr>
+                      ) : filteredSuppliers.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="empty-state">
+                            <span className="empty-icon">
+                              <Truck size={25} />
+                            </span>
+                            <strong>
+                              {supplierSearch
+                                ? 'No matching suppliers'
+                                : 'No suppliers yet'}
+                            </strong>
+                            <span>
+                              {supplierSearch
+                                ? 'Try another search term.'
+                                : 'Add your first supplier to get started.'}
+                            </span>
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredSuppliers.map((supplier) => (
+                          <tr key={supplier.id}>
+                            <td>
+                              <div className="item-cell">
+                                <span className="item-avatar">
+                                  <Truck size={17} />
+                                </span>
+                                <span>
+                                  <strong>{supplier.name}</strong>
+                                  <small>{supplier.address || 'No address provided'}</small>
+                                </span>
+                              </div>
+                            </td>
+                            <td>{supplier.contact_name || '—'}</td>
+                            <td>{supplier.email || '—'}</td>
+                            <td>{supplier.phone || '—'}</td>
+                            <td>
+                              <span
+                                className={`stock-badge ${
+                                  supplier.status === 'active' ? 'healthy' : 'low'
+                                }`}
+                              >
+                                <span />
+                                {supplier.status === 'active' ? 'Active' : 'Inactive'}
+                              </span>
+                            </td>
+                            <td>
+                              <div className="row-actions">
+                                <button
+                                  type="button"
+                                  className="edit-button"
+                                  onClick={() => {
+                                    setEditingSupplier(supplier)
+                                    setSupplierForm({
+                                      name: supplier.name,
+                                      contact_name: supplier.contact_name ?? '',
+                                      email: supplier.email ?? '',
+                                      phone: supplier.phone ?? '',
+                                      address: supplier.address ?? '',
+                                      notes: supplier.notes ?? '',
+                                      status: supplier.status,
+                                    })
+                                    setSupplierFormError('')
+                                    setShowSupplierForm(true)
+                                  }}
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  className="delete-button"
+                                  onClick={() => void deleteSupplier(supplier)}
+                                  aria-label={`Delete ${supplier.name}`}
+                                >
+                                  <Trash2 size={16} />
+                                  Delete
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="table-footer">
+                  <span>Page {supplierPage} of {supplierLastPage}</span>
+                  <div className="pagination">
+                    <button
+                      disabled={supplierPage <= 1 || supplierLoading}
+                      onClick={() => void loadSuppliers(supplierPage - 1)}
+                      aria-label="Previous supplier page"
+                    >
+                      <ChevronLeft size={17} />
+                    </button>
+                    <span>{supplierPage}</span>
+                    <button
+                      disabled={supplierPage >= supplierLastPage || supplierLoading}
+                      onClick={() => void loadSuppliers(supplierPage + 1)}
+                      aria-label="Next supplier page"
+                    >
+                      <ChevronRight size={17} />
+                    </button>
+                  </div>
+                </div>
+              </section>
+            </>
+          )}
+
+          <footer
+          className="page-footer"
+          style={{ display: activePage === 'inventory' ? undefined : 'none' }}
+           >
+          ERPFlow <span>·</span> Inventory management <span>·</span> Development build
+        </footer>
         </section>
       </main>
 
@@ -708,6 +1108,198 @@ function App() {
           </section>
         </div>
       )}
+      
+      {showSupplierForm && (
+        <div
+          className="modal-backdrop"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !supplierSaving) {
+              setShowSupplierForm(false)
+              setEditingSupplier(null)
+              setSupplierForm(emptySupplierForm)
+              setSupplierFormError('')
+            }
+          }}
+        >
+          <section
+            className="item-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="supplier-modal-title"
+          >
+            <div className="modal-heading">
+              <div>
+                <div className="eyebrow">SUPPLIER MANAGEMENT</div>
+                <h2 id="supplier-modal-title">
+                  {editingSupplier ? 'Edit supplier' : 'Add new supplier'}
+                </h2>
+                <p>Enter the supplier's business and contact details.</p>
+              </div>
+              <button
+                type="button"
+                className="icon-button"
+                aria-label="Close supplier form"
+                onClick={() => {
+                  if (supplierSaving) return
+                  setShowSupplierForm(false)
+                  setEditingSupplier(null)
+                  setSupplierForm(emptySupplierForm)
+                  setSupplierFormError('')
+                }}
+              >
+                <X size={19} />
+              </button>
+            </div>
+
+            <form onSubmit={saveSupplier}>
+              <div className="form-grid">
+                <label className="full-field">
+                  Supplier name <span>*</span>
+                  <input
+                    required
+                    maxLength={255}
+                    value={supplierForm.name}
+                    onChange={(event) =>
+                      setSupplierForm({
+                        ...supplierForm,
+                        name: event.target.value,
+                      })
+                    }
+                    placeholder="e.g. ABC Industrial Supplies"
+                  />
+                </label>
+
+                <label>
+                  Contact person
+                  <input
+                    maxLength={255}
+                    value={supplierForm.contact_name}
+                    onChange={(event) =>
+                      setSupplierForm({
+                        ...supplierForm,
+                        contact_name: event.target.value,
+                      })
+                    }
+                    placeholder="Contact person's name"
+                  />
+                </label>
+
+                <label>
+                  Email
+                  <input
+                    type="email"
+                    maxLength={255}
+                    value={supplierForm.email}
+                    onChange={(event) =>
+                      setSupplierForm({
+                        ...supplierForm,
+                        email: event.target.value,
+                      })
+                    }
+                    placeholder="contact@example.com"
+                  />
+                </label>
+
+                <label>
+                  Phone
+                  <input
+                    maxLength={50}
+                    value={supplierForm.phone}
+                    onChange={(event) =>
+                      setSupplierForm({
+                        ...supplierForm,
+                        phone: event.target.value,
+                      })
+                    }
+                    placeholder="Contact number"
+                  />
+                </label>
+
+                <label>
+                  Status
+                  <select
+                    value={supplierForm.status}
+                    onChange={(event) =>
+                      setSupplierForm({
+                        ...supplierForm,
+                        status: event.target.value as 'active' | 'inactive',
+                      })
+                    }
+                  >
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </label>
+
+                <label className="full-field">
+                  Address
+                  <textarea
+                    rows={2}
+                    value={supplierForm.address}
+                    onChange={(event) =>
+                      setSupplierForm({
+                        ...supplierForm,
+                        address: event.target.value,
+                      })
+                    }
+                    placeholder="Business address"
+                  />
+                </label>
+
+                <label className="full-field">
+                  Notes
+                  <textarea
+                    rows={3}
+                    value={supplierForm.notes}
+                    onChange={(event) =>
+                      setSupplierForm({
+                        ...supplierForm,
+                        notes: event.target.value,
+                      })
+                    }
+                    placeholder="Optional notes"
+                  />
+                </label>
+              </div>
+
+              {supplierFormError && (
+                <div className="form-error">
+                  <AlertTriangle size={16} />
+                  {supplierFormError}
+                </div>
+              )}
+
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  disabled={supplierSaving}
+                  onClick={() => {
+                    setShowSupplierForm(false)
+                    setEditingSupplier(null)
+                    setSupplierForm(emptySupplierForm)
+                    setSupplierFormError('')
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="primary-button"
+                  disabled={supplierSaving}
+                >
+                  {supplierSaving
+                    ? 'Saving...'
+                    : editingSupplier
+                      ? 'Save changes'
+                      : <><Plus size={16} /> Create supplier</>}
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      )}
+
     {selectedItem && (
       <div className="modal-backdrop">
         <section
