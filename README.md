@@ -1,5 +1,5 @@
 ﻿ <p align="center">
-    <img src="frontend/src/assets/erp-flow.png" width="200" alt="ERPFlow logo">
+    <img src="frontend/src/assets/erp-flow.png" width="400" alt="ERPFlow logo">
 </p>
 
 <h1 align="center">ERPFLOW: INVENTORY AND BUSINESS OPERATIONS MANAGEMENT SYSTEM</h1>
