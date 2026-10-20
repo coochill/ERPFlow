@@ -1,0 +1,16 @@
+#!/bin/sh
+
+set -eu
+
+lock_hash_file="/var/www/html/vendor/.erpflow-composer-hash"
+lock_hash="$(sha256sum /var/www/html/composer.json /var/www/html/composer.lock | sha256sum | cut -d ' ' -f 1)"
+
+if [ ! -f "$lock_hash_file" ] || [ "$(cat "$lock_hash_file")" != "$lock_hash" ]; then
+    composer install \
+        --no-interaction \
+        --prefer-dist \
+        --optimize-autoloader
+    printf '%s\n' "$lock_hash" > "$lock_hash_file"
+fi
+
+exec php-fpm --nodaemonize
