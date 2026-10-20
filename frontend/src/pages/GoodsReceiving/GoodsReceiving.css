@@ -1,0 +1,247 @@
+.goods-receiving-page {
+  width: 100%;
+}
+
+.goods-receipt-form-modal,
+.goods-receipt-details-modal {
+  width: min(900px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+
+.goods-receipt-request {
+  margin-top: 20px;
+  border: 1px solid #e7ecf1;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.goods-receipt-request-summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  color: #4a586b;
+  background: #fbfcfd;
+  border-bottom: 1px solid #edf0f4;
+}
+
+.goods-receipt-request-summary span,
+.table-secondary {
+  display: block;
+  margin-top: 4px;
+  color: #98a3b0;
+  font-size: 11px;
+}
+
+.goods-receipt-request table {
+  white-space: normal;
+}
+
+.goods-receipt-request td,
+.goods-receipt-request th {
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+.quantity-input {
+  width: 94px;
+  min-height: 36px;
+  padding: 7px 9px;
+  color: #263446;
+  background: white;
+  border: 1px solid #dfe5eb;
+  border-radius: 6px;
+}
+
+.goods-receipt-notes {
+  display: block;
+  margin-top: 18px;
+}
+
+.goods-receipt-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+  padding: 16px;
+  background: #fbfcfd;
+  border: 1px solid #edf0f4;
+  border-radius: 8px;
+}
+
+.goods-receipt-detail-grid span,
+.goods-receipt-detail-grid strong {
+  display: block;
+}
+
+.goods-receipt-detail-grid span {
+  margin-bottom: 5px;
+  color: #8a96a5;
+  font-size: 11px;
+}
+
+.goods-receipt-detail-grid strong {
+  color: #263446;
+  font-size: 13px;
+}
+
+.goods-receipt-notes-display {
+  padding: 12px 14px;
+  color: #4a586b;
+  background: #fbfcfd;
+  border-left: 3px solid #72bcb2;
+}
+
+@media (max-width: 700px) {
+  .goods-receipt-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .goods-receipt-request-summary {
+    display: block;
+  }
+}
+
+/* The backdrop must cover the viewport, not the page container. */
+.goods-receipt-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgb(15 23 42 / 55%);
+}
+
+/* Keep the dialog inside the viewport. */
+.goods-receipt-form-modal {
+  display: flex;
+  flex-direction: column;
+  width: min(900px, 100%);
+  max-height: calc(100dvh - 32px);
+  min-height: 0;
+  margin: 0;
+  overflow: hidden;
+  background: white;
+  border-radius: 12px;
+}
+
+/* Scroll the form content, not the entire dialog. */
+.goods-receipt-form-modal .modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Keep the action buttons visible. */
+.goods-receipt-form-modal .modal-footer {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 20px;
+  background: white;
+  border-top: 1px solid #e7ecf1;
+}
+
+@media (max-width: 600px) {
+  .goods-receipt-modal-backdrop {
+    padding: 8px;
+  }
+
+  .goods-receipt-form-modal {
+    max-height: calc(100dvh - 16px);
+    border-radius: 8px;
+  }
+}
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  overflow: hidden;
+  background: rgb(15 23 42 / 55%);
+}
+
+.goods-receipt-form-modal {
+  display: flex;
+  flex-direction: column;
+  width: min(900px, 100%);
+  max-height: calc(100dvh - 32px);
+  min-height: 0;
+  margin: 0;
+  overflow: hidden;
+  background: #fff;
+  border-radius: 12px;
+}
+
+.goods-receipt-form-modal .modal-heading {
+  flex: 0 0 auto;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e7ecf1;
+}
+
+.goods-receipt-form-modal > form {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.goods-receipt-form-modal .form-grid,
+.goods-receipt-form-modal .goods-receipt-request,
+.goods-receipt-form-modal .goods-receipt-notes,
+.goods-receipt-form-modal .form-error {
+  flex-shrink: 0;
+}
+
+.goods-receipt-form-modal > form {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.goods-receipt-form-modal .modal-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  flex-shrink: 0;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  margin-top: auto;
+  background: #fff;
+  border-top: 1px solid #e7ecf1;
+}
+
+@media (max-width: 600px) {
+  .modal-backdrop {
+    padding: 8px;
+  }
+
+  .goods-receipt-form-modal {
+    max-height: calc(100dvh - 16px);
+    border-radius: 8px;
+  }
+
+  .goods-receipt-form-modal .modal-heading {
+    padding: 16px;
+  }
+
+  .goods-receipt-form-modal .modal-actions {
+    padding: 12px 16px;
+  }
+}
+.form-hint {
+  margin: 10px 0;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.5;
+}

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Model;
 
 class PurchaseRequest extends Model
@@ -22,4 +23,8 @@ class PurchaseRequest extends Model
     {
         return $this->hasMany(PurchaseRequestItem::class);
     }
+    public function goodsReceipts(): HasMany
+{
+    return $this->hasMany(GoodsReceipt::class);
+}
 }

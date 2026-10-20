@@ -5,6 +5,7 @@ use App\Http\Controllers\InventoryMovementController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\PurchaseRequestController;
+use App\Http\Controllers\GoodsReceiptController;
 
 Route::apiResource('items', ItemController::class);
 Route::post(
@@ -22,3 +23,17 @@ Route::patch(
 );
 
 Route::apiResource('purchase-requests', PurchaseRequestController::class);
+Route::get(
+    '/goods-receipts',
+    [GoodsReceiptController::class, 'index']
+);
+
+Route::post(
+    '/goods-receipts',
+    [GoodsReceiptController::class, 'store']
+);
+
+Route::get(
+    '/goods-receipts/{goodsReceipt}',
+    [GoodsReceiptController::class, 'show']
+);
