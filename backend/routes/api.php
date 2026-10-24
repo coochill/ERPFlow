@@ -6,7 +6,11 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\PurchaseRequestController;
 use App\Http\Controllers\GoodsReceiptController;
+use App\Http\Middleware\EnsureEtlImportToken;
 
+
+
+Route::post('/items/import', [ItemController::class, 'import']);
 Route::apiResource('items', ItemController::class);
 Route::post(
     '/items/{item}/movements',
@@ -37,3 +41,5 @@ Route::get(
     '/goods-receipts/{goodsReceipt}',
     [GoodsReceiptController::class, 'show']
 );
+Route::post('/items/import', [ItemController::class, 'import'])
+    ->middleware(EnsureEtlImportToken::class);

@@ -6,6 +6,7 @@ use App\Models\Item;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 
 class ItemController extends Controller
 {
@@ -64,4 +65,74 @@ class ItemController extends Controller
 
         return response()->json(null, 204);
     }
+public function import(Request $request): JsonResponse
+{
+    $validated = $request->validate([
+        'rows' => ['required', 'array', 'min:1', 'max:500'],
+        'rows.*.sku' => ['required', 'string', 'max:50', 'regex:/\S/'],
+        'rows.*.name' => ['required', 'string', 'max:255'],
+        'rows.*.description' => ['nullable', 'string'],
+        'rows.*.quantity' => ['sometimes', 'integer', 'min:0'],
+        'rows.*.reorder_level' => ['sometimes', 'integer', 'min:0'],
+        'rows.*.unit_price' => ['sometimes', 'numeric', 'min:0'],
+        'rows.*.unit' => ['sometimes', 'string', 'max:20'],
+    ]);
+
+    $results = [];
+
+    foreach ($validated['rows'] as $row) {
+        $sku = strtoupper(trim($row['sku']));
+
+        $result = DB::transaction(function () use ($row, $sku) {
+            $existingItem = Item::query()
+                ->where('sku', $sku)
+                ->first();
+
+            if ($existingItem) {
+                return [
+                    'sku' => $sku,
+                    'status' => 'conflict',
+                    'message' => 'SKU already exists; existing item was not changed.',
+                ];
+            }
+
+            $item = Item::create([
+                'sku' => $sku,
+                'name' => trim($row['name']),
+                'description' => $row['description'] ?? null,
+                'quantity' => 0,
+                'reorder_level' => $row['reorder_level'] ?? 10,
+                'unit_price' => $row['unit_price'] ?? 0,
+                'unit' => $row['unit'] ?? 'piece',
+            ]);
+
+            return [
+                'sku' => $sku,
+                'status' => 'imported',
+                'item_id' => $item->id,
+                'message' => 'Item created with zero stock.',
+            ];
+        });
+
+        $results[] = $result;
+    }
+
+    $imported = count(array_filter(
+        $results,
+        fn (array $result) => $result['status'] === 'imported'
+    ));
+
+    $conflicts = count(array_filter(
+        $results,
+        fn (array $result) => $result['status'] === 'conflict'
+    ));
+
+    return response()->json([
+        'total_rows' => count($results),
+        'imported' => $imported,
+        'conflicts' => $conflicts,
+        'results' => $results,
+    ]);
+}
+
 }

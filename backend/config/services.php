@@ -35,4 +35,7 @@ return [
         ],
     ],
 
+    'etl_import' => [
+        'token' => env('ETL_IMPORT_TOKEN'),
+    ],
 ];
