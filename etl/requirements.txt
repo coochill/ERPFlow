@@ -3,3 +3,7 @@ openpyxl
 requests
 python-dotenv
 pytest
+fastapi
+uvicorn
+python-multipart
+httpx

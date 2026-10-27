@@ -7,8 +7,7 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\PurchaseRequestController;
 use App\Http\Controllers\GoodsReceiptController;
 use App\Http\Middleware\EnsureEtlImportToken;
-
-
+use App\Http\Controllers\EtlImportController;
 
 Route::post('/items/import', [ItemController::class, 'import']);
 Route::apiResource('items', ItemController::class);
@@ -43,3 +42,12 @@ Route::get(
 );
 Route::post('/items/import', [ItemController::class, 'import'])
     ->middleware(EnsureEtlImportToken::class);
+
+Route::post(
+    '/etl/inventory/previews',
+    [EtlImportController::class, 'previewInventory']);
+
+    Route::post(
+    '/etl/inventory/previews/{jobId}/import',
+    [EtlImportController::class, 'importInventory']
+);

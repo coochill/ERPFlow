@@ -38,4 +38,9 @@ return [
     'etl_import' => [
         'token' => env('ETL_IMPORT_TOKEN'),
     ],
+
+    'etl' => [
+        'url' => env('ETL_SERVICE_URL', 'http://etl:8000'),
+        'token' => env('ETL_SERVICE_TOKEN'),
+    ]
 ];

@@ -7,3 +7,5 @@ data/input/*
 data/output/*
 !data/input/.gitkeep
 !data/output/.gitkeep
+data/previews/
+data/test_inventory.csv

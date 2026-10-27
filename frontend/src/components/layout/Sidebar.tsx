@@ -2,6 +2,7 @@ import {
   Activity,
   Boxes,
   ClipboardList,
+  FileSpreadsheet,
   LayoutDashboard,
   Package,
   Settings,
@@ -14,6 +15,7 @@ export type WorkspacePage =
   | 'suppliers'
   | 'purchases'
   | 'receiving'
+  | 'data-import'
 
 type SidebarProps = {
   activePage: WorkspacePage
@@ -94,6 +96,16 @@ function Sidebar({
         >
           <ClipboardList size={18} /> Goods receiving
         </a>
+        <a
+        className={`nav-link ${activePage === 'data-import' ? 'active' : ''}`}
+        href="#data-import"
+        onClick={(event) => {
+          event.preventDefault()
+          onPageChange('data-import')
+        }}
+      >
+        <FileSpreadsheet size={18} /> Data Import
+      </a>
       </nav>
 
       <div className="sidebar-bottom">
