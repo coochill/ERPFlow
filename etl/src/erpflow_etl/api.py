@@ -16,8 +16,10 @@ from erpflow_etl.validate import validate_inventory
 
 from pydantic import BaseModel, Field
 
-from erpflow_rag.service import retrieve_policy_chunks
-
+from erpflow_rag.service import (
+    answer_policy_question,
+    retrieve_policy_chunks,
+)
 app = FastAPI(
     title="ERPFlow ETL API",
     description="Internal inventory data import service.",
@@ -25,6 +27,10 @@ app = FastAPI(
 )
 
 class RagRetrieveRequest(BaseModel):
+    question: str = Field(min_length=1, max_length=1000)
+    top_k: int = Field(default=5, ge=1, le=10)
+
+class RagAskRequest(BaseModel):
     question: str = Field(min_length=1, max_length=1000)
     top_k: int = Field(default=5, ge=1, le=10)
 
@@ -167,6 +173,40 @@ def retrieve_rag(request: RagRetrieveRequest):
         ],
     }
 
+@app.post(
+    "/internal/rag/ask",
+    dependencies=[Depends(require_service_token)],
+)
+def ask_rag(request: RagAskRequest):
+    """Generate an answer using retrieved company policy excerpts."""
+
+    question = request.question.strip()
+
+    if not question:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Question cannot be empty.",
+        )
+
+    try:
+        result = answer_policy_question(
+            question=question,
+            top_k=request.top_k,
+        )
+
+    except (FileNotFoundError, ValueError) as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Policy knowledge base is unavailable.",
+        ) from error
+
+    except RuntimeError as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Unable to generate a policy answer.",
+        ) from error
+
+    return result
 @app.post(
     "/internal/inventory/previews",
     dependencies=[Depends(require_service_token)],

@@ -264,3 +264,113 @@ def test_rag_retrieval_returns_empty_results_for_unknown_question(client):
     assert response.status_code == 200
     assert response.json()["result_count"] == 0
     assert response.json()["results"] == []
+
+
+def test_rag_ask_requires_service_token(client):
+    response = client.post(
+        "/internal/rag/ask",
+        json={
+            "question": "What is the purchase approval process?"
+        },
+    )
+
+    assert response.status_code == 401
+
+
+def test_rag_ask_returns_generated_answer(client, monkeypatch):
+    mock_result = {
+        "question": "Who approves a purchase above $50,000?",
+        "answer": (
+            "The approval authority is determined by the "
+            "procurement policy. [NTC-PRC-001, Approval Authority]"
+        ),
+        "source_count": 1,
+        "sources": [
+            {
+                "chunk_id": "test-chunk-001",
+                "source": "procurement_policy.md",
+                "policy_id": "NTC-PRC-001",
+                "title": "Procurement and Purchase Approvals Policy",
+                "version": "2.0",
+                "effective_date": "2026-02-01",
+                "section": "Approval Authority",
+            }
+        ],
+    }
+
+    def mock_answer_policy_question(question, top_k):
+        assert question == "Who approves a purchase above $50,000?"
+        assert top_k == 3
+        return mock_result
+
+    monkeypatch.setattr(
+        api,
+        "answer_policy_question",
+        mock_answer_policy_question,
+    )
+
+    response = client.post(
+        "/internal/rag/ask",
+        headers=auth_headers(),
+        json={
+            "question": "Who approves a purchase above $50,000?",
+            "top_k": 3,
+        },
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["question"] == mock_result["question"]
+    assert data["answer"] == mock_result["answer"]
+    assert data["source_count"] == 1
+    assert data["sources"][0]["policy_id"] == "NTC-PRC-001"
+    assert data["sources"][0]["section"] == "Approval Authority"
+
+
+def test_rag_ask_rejects_empty_question(client):
+    response = client.post(
+        "/internal/rag/ask",
+        headers=auth_headers(),
+        json={"question": "   "},
+    )
+
+    assert response.status_code == 422
+
+
+def test_rag_ask_rejects_invalid_top_k(client):
+    response = client.post(
+        "/internal/rag/ask",
+        headers=auth_headers(),
+        json={
+            "question": "inventory policy",
+            "top_k": 11,
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_rag_ask_handles_gemini_generation_failure(client, monkeypatch):
+    def mock_answer_policy_question(question, top_k):
+        raise RuntimeError("Gemini generation failed.")
+
+    monkeypatch.setattr(
+        api,
+        "answer_policy_question",
+        mock_answer_policy_question,
+    )
+
+    response = client.post(
+        "/internal/rag/ask",
+        headers=auth_headers(),
+        json={
+            "question": "What is the inventory policy?"
+        },
+    )
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == (
+        "Unable to generate a policy answer."
+    )

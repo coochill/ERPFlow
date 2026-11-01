@@ -88,6 +88,8 @@ services:
       PYTHONUNBUFFERED: "1"
       ETL_SERVICE_TOKEN: ${ETL_SERVICE_TOKEN:?Set ETL_SERVICE_TOKEN in the root .env}
       ERP_API_BASE_URL: http://nginx/api
+      GEMINI_API_KEY: ${GEMINI_API_KEY:?Set GEMINI_API_KEY in root .env}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-flash-latest}
     command: ["uvicorn", "erpflow_etl.api:app", "--host", "0.0.0.0", "--port", "8000"]
     ports: 
       - "8000:8000"

@@ -7,3 +7,4 @@ fastapi
 uvicorn
 python-multipart
 httpx
+google-genai<3.0.0
