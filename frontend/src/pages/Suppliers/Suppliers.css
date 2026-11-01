@@ -1,1 +1,11 @@
-/* Supplier-specific rules are currently supplied by the preserved workspace stylesheet. */
+.suppliers-page {
+  width: 100%;
+}
+
+.supplier-panel {
+  width: 100%;
+}
+
+.supplier-form-modal {
+  width: min(100%, 620px);
+}

@@ -1,1 +1,166 @@
-/* Inventory-specific rules are currently supplied by the preserved workspace stylesheet. */
+.inventory-page {
+  width: 100%;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 25px;
+}
+
+.stat-card {
+  min-width: 0;
+  padding: 20px;
+  background: white;
+  border: 1px solid #e7ecf1;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px #1a314708;
+}
+
+.stat-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #687688;
+  font-size: 12px;
+  font-weight: 550;
+}
+
+.stat-icon {
+  display: grid;
+  place-items: center;
+  width: 37px;
+  height: 37px;
+  border-radius: 9px;
+}
+
+.stat-icon.blue { color: #397bd4; background: #edf4ff; }
+.stat-icon.amber { color: #c78626; background: #fff5e5; }
+.stat-icon.green { color: #168c80; background: #e6f6f1; }
+.stat-icon.violet { color: #8262d2; background: #f2edff; }
+
+.stat-number {
+  margin-top: 14px;
+  color: #1c2a3a;
+  font-size: 29px;
+  font-weight: 730;
+  letter-spacing: -0.8px;
+  overflow-wrap: anywhere;
+}
+
+.stat-currency {
+  font-size: clamp(19px, 2vw, 25px);
+}
+
+.stat-foot {
+  margin-top: 7px;
+  color: #98a2af;
+  font-size: 11px;
+}
+
+.stock-sub {
+  margin-top: 5px;
+  color: #99a3af;
+  font-size: 11px;
+}
+
+.stock-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 22px;
+  padding: 5px;
+  background: #f5f7f9;
+  border-radius: 8px;
+}
+
+.stock-tab {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 8px;
+  color: #64748b;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.stock-tab.active {
+  color: #147c70;
+  background: #fff;
+  border-color: #dce9e6;
+  box-shadow: 0 1px 2px #172b420a;
+}
+
+.movement-history h3 {
+  margin: 0 0 15px;
+  color: #334155;
+  font-size: 14px;
+}
+
+.movement-list {
+  display: grid;
+}
+
+.movement-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid #edf0f4;
+}
+
+.movement-row > div {
+  display: grid;
+  gap: 5px;
+}
+
+.movement-row strong {
+  color: #334155;
+  font-size: 12px;
+}
+
+.movement-row small,
+.movement-history > p {
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+.movement-row .movement-in { color: #168c80; }
+.movement-row .movement-out { color: #dc6262; }
+
+@media (max-width: 1150px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .stats-grid {
+    gap: 10px;
+  }
+
+  .stat-card {
+    padding: 14px;
+  }
+
+  .stat-number {
+    font-size: 25px;
+  }
+
+  .stat-currency {
+    font-size: 18px;
+  }
+
+  .stat-icon {
+    width: 31px;
+    height: 31px;
+  }
+}

@@ -1,1 +1,96 @@
-/* Purchase-request-specific rules are currently supplied by the preserved workspace stylesheet. */
+.purchase-requests-page {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-width: 0;
+}
+
+.purchase-request-panel {
+  width: 100%;
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.toolbar-group .search-box {
+  width: min(100%, 390px);
+}
+
+.filter-select {
+  min-height: 37px;
+  padding: 0 30px 0 11px;
+  color: #455468;
+  background: white;
+  border: 1px solid #e1e7ed;
+  border-radius: 7px;
+  font-size: 12px;
+  outline: none;
+}
+
+.filter-select:focus {
+  border-color: #72bcb2;
+  box-shadow: 0 0 0 3px #168c8012;
+}
+
+.form-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 24px 0 14px;
+}
+
+.form-section-heading h3 {
+  margin: 0;
+  color: #263446;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.line-grid {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 0.8fr) minmax(0, 1fr) auto;
+  align-items: end;
+}
+
+.line-grid > .delete-button {
+  height: 38px;
+  padding: 0 10px;
+}
+
+.estimated-total {
+  margin-right: auto;
+  color: #8b96a4;
+  font-size: 12px;
+}
+
+.estimated-total strong {
+  margin-left: 6px;
+  color: #273548;
+  font-size: 14px;
+}
+
+@media (max-width: 700px) {
+  .toolbar-group {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .toolbar-group .search-box,
+  .filter-select {
+    width: 100%;
+  }
+
+  .line-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .line-grid > label:first-child {
+    grid-column: 1 / -1;
+  }
+}
