@@ -89,6 +89,8 @@ services:
       ETL_SERVICE_TOKEN: ${ETL_SERVICE_TOKEN:?Set ETL_SERVICE_TOKEN in the root .env}
       ERP_API_BASE_URL: http://nginx/api
     command: ["uvicorn", "erpflow_etl.api:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports: 
+      - "8000:8000"
     networks:
       - erpflow
 

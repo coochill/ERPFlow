@@ -187,3 +187,80 @@ def test_expired_preview_is_cleaned_up(client, tmp_path):
     api.cleanup_expired_previews()
 
     assert not expired_dir.exists()
+
+def test_rag_retrieval_requires_service_token(client):
+    response = client.post(
+        "/internal/rag/retrieve",
+        json={
+            "question": "What is the purchase approval process?"
+        },
+    )
+
+    assert response.status_code == 401
+
+
+def test_rag_retrieval_returns_policy_excerpts(client):
+    response = client.post(
+        "/internal/rag/retrieve",
+        headers=auth_headers(),
+        json={
+            "question": "Who approves a purchase above $50,000?",
+            "top_k": 3,
+        },
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["question"] == (
+        "Who approves a purchase above $50,000?"
+    )
+    assert data["result_count"] > 0
+
+    result = data["results"][0]
+
+    assert result["policy_id"] == "NTC-PRC-001"
+    assert result["version"]
+    assert result["effective_date"]
+    assert result["section"]
+    assert result["text"]
+    assert result["score"] > 0
+    assert result["matched_terms"]
+
+
+def test_rag_retrieval_rejects_empty_question(client):
+    response = client.post(
+        "/internal/rag/retrieve",
+        headers=auth_headers(),
+        json={"question": "   "},
+    )
+
+    assert response.status_code == 422
+
+
+def test_rag_retrieval_rejects_invalid_top_k(client):
+    response = client.post(
+        "/internal/rag/retrieve",
+        headers=auth_headers(),
+        json={
+            "question": "inventory policy",
+            "top_k": 0,
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_rag_retrieval_returns_empty_results_for_unknown_question(client):
+    response = client.post(
+        "/internal/rag/retrieve",
+        headers=auth_headers(),
+        json={
+            "question": "xyzzy quux nonexistentterm",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["result_count"] == 0
+    assert response.json()["results"] == []

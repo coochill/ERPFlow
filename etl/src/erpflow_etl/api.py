@@ -14,11 +14,19 @@ from erpflow_etl.extract import extract_file
 from erpflow_etl.transform import transform_inventory
 from erpflow_etl.validate import validate_inventory
 
+from pydantic import BaseModel, Field
+
+from erpflow_rag.service import retrieve_policy_chunks
+
 app = FastAPI(
     title="ERPFlow ETL API",
     description="Internal inventory data import service.",
     version="1.0.0",
 )
+
+class RagRetrieveRequest(BaseModel):
+    question: str = Field(min_length=1, max_length=1000)
+    top_k: int = Field(default=5, ge=1, le=10)
 
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
 MAX_PREVIEW_ROWS = 100
@@ -112,6 +120,52 @@ def health_check():
 def internal_health_check():
     return {"status": "ok", "service": "erpflow-etl"}
 
+@app.post(
+    "/internal/rag/retrieve",
+    dependencies=[Depends(require_service_token)],
+)
+def retrieve_rag(request: RagRetrieveRequest):
+    """Retrieve relevant policy excerpts for a user question."""
+
+    question = request.question.strip()
+
+    if not question:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Question cannot be empty.",
+        )
+
+    try:
+        results = retrieve_policy_chunks(
+            question=question,
+            top_k=request.top_k,
+        )
+
+    except (FileNotFoundError, ValueError) as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Policy knowledge base is unavailable.",
+        ) from error
+
+    return {
+        "question": question,
+        "result_count": len(results),
+        "results": [
+            {
+                "chunk_id": result.chunk.chunk_id,
+                "source": result.chunk.source,
+                "policy_id": result.chunk.policy_id,
+                "title": result.chunk.title,
+                "version": result.chunk.version,
+                "effective_date": result.chunk.effective_date,
+                "section": result.chunk.section,
+                "text": result.chunk.text,
+                "score": result.score,
+                "matched_terms": list(result.matched_terms),
+            }
+            for result in results
+        ],
+    }
 
 @app.post(
     "/internal/inventory/previews",
