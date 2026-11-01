@@ -12,7 +12,11 @@ function Header({ activePage }: HeaderProps) {
         ? 'Suppliers'
         : activePage === 'purchases'
           ? 'Purchase requests'
-          : 'Goods receiving'
+          : activePage === 'receiving'
+            ? 'Goods receiving'
+            : activePage === 'data-import'
+              ? 'Data Import'
+              : 'AI Assistant'
 
   return (
     <header className="topbar">

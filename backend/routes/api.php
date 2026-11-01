@@ -8,6 +8,10 @@ use App\Http\Controllers\PurchaseRequestController;
 use App\Http\Controllers\GoodsReceiptController;
 use App\Http\Middleware\EnsureEtlImportToken;
 use App\Http\Controllers\EtlImportController;
+use App\Http\Controllers\AiAssistantController;
+
+Route::post('/ai/ask', [AiAssistantController::class, 'ask']);
+    // ->middleware('auth:sanctum');
 
 Route::post('/items/import', [ItemController::class, 'import']);
 Route::apiResource('items', ItemController::class);

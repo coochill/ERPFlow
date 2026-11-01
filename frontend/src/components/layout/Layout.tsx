@@ -58,6 +58,7 @@ import Suppliers from '../../pages/Suppliers/Suppliers'
 import PurchaseRequests from '../../pages/PurchaseRequests/PurchaseRequests'
 import GoodsReceiving from '../../pages/GoodsReceiving/GoodsReceiving'
 import DataImport from '../../pages/DataImport/DataImport'
+import AiAssistant from '../../pages/AiAssistant/AiAssistant'
 
 const emptyPurchaseRequestItem: PurchaseRequestFormItem = {
   item_id: '',
@@ -1361,6 +1362,7 @@ async function savePurchaseRequest(event: React.FormEvent<HTMLFormElement>) {
             <GoodsReceiving onInventoryRefresh={() => void loadItems(page)} />
           )}
           {activePage === 'data-import' && <DataImport />}
+          {activePage === 'ai-assistant' && <AiAssistant />}
           <footer
           className="page-footer"
           style={{ display: activePage === 'inventory' ? undefined : 'none' }}

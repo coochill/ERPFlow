@@ -7,6 +7,7 @@ import {
   Package,
   Settings,
   ShoppingCart,
+  Sparkles,
   Truck,
 } from 'lucide-react'
 
@@ -16,6 +17,7 @@ export type WorkspacePage =
   | 'purchases'
   | 'receiving'
   | 'data-import'
+  | 'ai-assistant'
 
 type SidebarProps = {
   activePage: WorkspacePage
@@ -106,6 +108,16 @@ function Sidebar({
       >
         <FileSpreadsheet size={18} /> Data Import
       </a>
+        <a
+          className={`nav-link ${activePage === 'ai-assistant' ? 'active' : ''}`}
+          href="#ai-assistant"
+          onClick={(event) => {
+            event.preventDefault()
+            onPageChange('ai-assistant')
+          }}
+        >
+          <Sparkles size={18} /> AI Assistant
+        </a>
       </nav>
 
       <div className="sidebar-bottom">
