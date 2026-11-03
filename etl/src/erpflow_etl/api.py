@@ -14,6 +14,8 @@ from erpflow_etl.extract import extract_file
 from erpflow_etl.transform import transform_inventory
 from erpflow_etl.validate import validate_inventory
 
+from erpflow_mcp.server import mcp_app, mcp_lifespan
+
 from pydantic import BaseModel, Field
 
 from erpflow_rag.service import (
@@ -24,6 +26,7 @@ app = FastAPI(
     title="ERPFlow ETL API",
     description="Internal inventory data import service.",
     version="1.0.0",
+    lifespan=mcp_lifespan,
 )
 
 class RagRetrieveRequest(BaseModel):
@@ -390,3 +393,6 @@ def get_inventory_preview_records(job_id: str):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Unable to retrieve the stored preview records.",
         ) from error
+
+# Mount MCP after existing API routes.
+app.mount("/", mcp_app)
