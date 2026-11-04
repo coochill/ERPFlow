@@ -172,6 +172,17 @@ Run the Laravel backend tests:
 docker compose exec backend php artisan test
 ```
 
+## MCP Server Foundation
+
+The ETL service also mounts the official Python MCP SDK's Streamable HTTP
+transport at `/mcp`. Requests to that endpoint require the same
+`ETL_SERVICE_TOKEN` bearer token used by the internal ETL endpoints. This
+foundation does not expose ERP tools yet.
+
+The reusable asynchronous Laravel API client is available to future MCP
+tools. It uses `ERP_API_BASE_URL`, `ERP_API_TOKEN`, and `ERP_API_TIMEOUT`, and
+does not connect directly to MySQL.
+
 ## Current Scope
 
 This component provides a file-based inventory ETL workflow integrated with ERPFlow's Laravel API. It is designed for controlled imports with validation and explicit loading, rather than scheduled or continuous synchronization.

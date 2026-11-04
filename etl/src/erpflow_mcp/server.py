@@ -1,9 +1,13 @@
 from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
+import logging
 
 from mcp.server import MCPServer
 
 from erpflow_mcp.config import ServiceTokenMiddleware
+
+
+logger = logging.getLogger(__name__)
 
 
 mcp_server = MCPServer(
@@ -29,5 +33,7 @@ mcp_app = ServiceTokenMiddleware(
 async def mcp_lifespan(app) -> AsyncIterator[None]:
     """Manage MCP session lifecycle."""
 
+    logger.info("Starting ERPFlow MCP server with Streamable HTTP transport.")
     async with mcp_server.session_manager.run():
         yield
+    logger.info("Stopped ERPFlow MCP server.")
