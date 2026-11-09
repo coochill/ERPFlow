@@ -172,19 +172,148 @@ Run the Laravel backend tests:
 docker compose exec backend php artisan test
 ```
 
-## MCP Server Foundation
+## MCP Server
 
-The ETL service also mounts the official Python MCP SDK's Streamable HTTP
-transport at `/mcp`. Requests to that endpoint require the same
-`ETL_SERVICE_TOKEN` bearer token used by the internal ETL endpoints. This
-foundation does not expose ERP tools yet.
+The ETL service mounts the official Python MCP SDK's Streamable HTTP
+transport at `/mcp`. The MCP server exposes ten read-only tools:
 
-The reusable asynchronous Laravel API client is available to future MCP
-tools. It uses `ERP_API_BASE_URL`, `ERP_API_TOKEN`, and `ERP_API_TIMEOUT`, and
-does not connect directly to MySQL.
+### Inventory
+
+- `get_inventory_items(page=1)`
+- `get_inventory_item(item_id)`
+- `get_low_stock_items()`
+- `get_inventory_movements(item_id=None, movement_type=None, page=1)`
+
+### Suppliers
+
+- `get_suppliers(page=1)`
+- `get_supplier_details(supplier_id)`
+
+### Purchase requests
+
+- `get_purchase_requests(page=1)`
+- `get_purchase_request_details(purchase_request_id)`
+
+### Goods receiving
+
+- `get_goods_receipts(page=1)`
+- `get_goods_receipt_details(goods_receipt_id)`
+
+All tools use the asynchronous Laravel API client, issue only GET requests,
+and return sanitized API errors without credentials or internal response
+details.
+
+### Configuration and authentication
+
+The ETL container requires:
+
+- `ETL_SERVICE_TOKEN`: bearer token required by MCP HTTP clients and internal
+  ETL endpoints.
+- `ERP_API_BASE_URL`: Laravel API base URL, for example
+  `http://nginx/api`.
+- `ERP_API_TOKEN`: bearer token sent to Laravel as an `Authorization` header.
+- `ERP_API_TIMEOUT`: Laravel request timeout in seconds.
+- `ERP_API_CONNECT_TIMEOUT`: Laravel connection timeout in seconds.
+- `MCP_TRANSPORT`, `MCP_HOST`, and `MCP_PORT`: Streamable HTTP server settings.
+
+MCP clients connect to `http://localhost:8000/mcp` when using the Docker
+Compose port mapping and must send:
+
+```text
+Authorization: Bearer <ETL_SERVICE_TOKEN>
+```
+
+Start the ETL service with Docker Compose from the repository root:
+
+```powershell
+docker compose up -d etl
+```
+
+The reusable asynchronous Laravel API client is used by the read-only
+inventory MCP tools:
+
+- `get_inventory_items(page=1)` retrieves one Laravel-paginated item page.
+- `get_inventory_item(item_id)` retrieves one item and reports missing IDs
+  without exposing API details.
+- `get_low_stock_items()` retrieves all item pages and compares `quantity`
+  with Laravel's `reorder_level` field.
+- `get_inventory_movements(item_id=None, movement_type=None, page=1)`
+  retrieves movement history. Because Laravel exposes movements through the
+  nested `/items/{item}/movements` route, an omitted `item_id` aggregates the
+  requested page for every item. Movement type filtering is applied to the
+  returned records.
+
+These tools use `ERP_API_BASE_URL`, `ERP_API_TOKEN`, and `ERP_API_TIMEOUT`,
+and do not connect directly to MySQL or modify inventory. The current Laravel
+item listing does not expose keyword search, and the movement API does not
+expose a movement-type query parameter, so those filters are not sent as
+unsupported API parameters.
+
+The read-only supplier MCP tools use Laravel's supplier resource endpoints:
+
+- `get_suppliers(page=1)` retrieves one paginated supplier page.
+- `get_supplier_details(supplier_id)` retrieves one supplier and returns a
+  clear not-found response for an unknown ID.
+
+The supplier listing currently implements no search or filter query
+parameters, so the MCP tools do not send unsupported filters. Supplier
+records contain Laravel's `id`, `name`, `contact_name`, `email`, `phone`,
+`address`, `notes`, `status`, and timestamp fields when returned by the API.
+
+The read-only purchase request MCP tools use Laravel's purchase request
+resource endpoints:
+
+- `get_purchase_requests(page=1)` retrieves one paginated page. Laravel
+  includes the related `supplier` and `items.item` data in each result.
+- `get_purchase_request_details(purchase_request_id)` retrieves one purchase
+  request with its supplier and line items.
+
+The listing endpoint does not implement status query filtering. Laravel's
+purchase request statuses are `draft`, `pending`, `approved`, and `rejected`,
+but the status filter is only used by the status-update endpoint and is not
+sent by these read-only tools.
+
+The read-only goods receiving MCP tools use Laravel's goods receipt
+endpoints:
+
+- `get_goods_receipts(page=1)` retrieves one paginated page from
+  `GET /goods-receipts`.
+- `get_goods_receipt_details(goods_receipt_id)` retrieves one receipt from
+  `GET /goods-receipts/{goodsReceipt}`.
+
+Laravel includes the related `purchaseRequest`, `supplier`, `receivedBy`, and
+`items.purchaseRequestItem.item` data in both read responses. Receipt records
+include fields such as `receipt_number`, `purchase_request_id`,
+`supplier_id`, `received_by`, `received_at`, `notes`, and timestamps. No
+receipt filters are implemented by the listing endpoint, so the MCP tools
+send only the supported `page` parameter.
 
 ## Current Scope
 
 This component provides a file-based inventory ETL workflow integrated with ERPFlow's Laravel API. It is designed for controlled imports with validation and explicit loading, rather than scheduled or continuous synchronization.
 
 Future improvements could include richer import reconciliation, additional source formats, and automated ETL scheduling.
+
+### MCP testing
+
+Run the focused MCP integration tests inside the ETL container:
+
+```powershell
+docker compose run --rm --no-deps etl python -m pytest -q tests/test_mcp.py
+```
+
+Run the complete ETL suite when the environment is ready:
+
+```powershell
+docker compose run --rm --no-deps etl python -m pytest -q
+```
+
+The installed MCP SDK (`mcp==2.3.0`) provides the compatible
+`mcp.client.streamable_http.streamable_http_client` transport and
+`mcp.ClientSession` client. A real client connects to
+`http://localhost:8000/mcp` with the `ETL_SERVICE_TOKEN` bearer header.
+
+Known limitations include the Laravel endpoints' lack of search/status
+filters for the read-only listings and the existing MCP session manager
+one-shot lifecycle behavior when the same application lifespan is reused
+across tests.
