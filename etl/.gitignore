@@ -9,3 +9,5 @@ data/output/*
 !data/output/.gitkeep
 data/previews/
 data/test_inventory.csv
+data/output/gemini_usage.json
+data/output/gemini_usage.json.lock

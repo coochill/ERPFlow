@@ -31,7 +31,7 @@ class AiAssistantTest extends TestCase
     {
         Sanctum::actingAs(User::factory()->create());
         Http::fake([
-            'http://etl:8000/internal/rag/ask' => Http::response([
+            'http://etl:8000/internal/assistant/ask' => Http::response([
                 'question' => 'Who approves a purchase?',
                 'answer' => 'The finance director approves it.',
                 'source_count' => 1,
@@ -48,7 +48,7 @@ class AiAssistantTest extends TestCase
             ->assertJsonPath('source_count', 1);
 
         Http::assertSent(fn ($request) =>
-            $request->url() === 'http://etl:8000/internal/rag/ask'
+            $request->url() === 'http://etl:8000/internal/assistant/ask'
             && $request->header('Authorization')[0] === 'Bearer test-rag-token'
             && $request['top_k'] === 5
         );

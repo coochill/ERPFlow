@@ -96,9 +96,16 @@ services:
       MCP_PORT: ${MCP_PORT:-8000}
       GEMINI_API_KEY: ${GEMINI_API_KEY:?Set GEMINI_API_KEY in root .env}
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-flash-latest}
+      GEMINI_DAILY_REQUEST_LIMIT: ${GEMINI_DAILY_REQUEST_LIMIT:-20}
+      GEMINI_MAX_TOOL_ROUNDS: ${GEMINI_MAX_TOOL_ROUNDS:-2}
+      GEMINI_USAGE_TIMEZONE: ${GEMINI_USAGE_TIMEZONE:-Asia/Manila}
+      GEMINI_USAGE_FILE: ${GEMINI_USAGE_FILE:-/app/data/output/gemini_usage.json}
     command: ["uvicorn", "erpflow_etl.api:app", "--host", "0.0.0.0", "--port", "8000"]
     ports: 
       - "8000:8000"
+    depends_on:
+      nginx:
+        condition: service_started
     networks:
       - erpflow
 

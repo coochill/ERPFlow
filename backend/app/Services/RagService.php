@@ -13,7 +13,9 @@ class RagService
      *     question: string,
      *     answer: string,
      *     source_count: int,
-     *     sources: array<int, array<string, mixed>>
+     *     sources: array<int, array<string, mixed>>,
+     *     used_live_data?: bool,
+     *     live_tools?: array<int, string>
      * }
      */
     public function ask(string $question, int $topK): array
@@ -30,7 +32,7 @@ class RagService
                 ->acceptJson()
                 ->connectTimeout(5)
                 ->timeout(20)
-                ->post($url . '/internal/rag/ask', [
+                ->post($url . '/internal/assistant/ask', [
                     'question' => $question,
                     'top_k' => $topK,
                 ]);
@@ -66,6 +68,13 @@ class RagService
             'sources' => array_values(array_filter(
                 $payload['sources'],
                 static fn (mixed $source): bool => is_array($source),
+            )),
+            'used_live_data' => (bool) ($payload['used_live_data'] ?? false),
+            'live_tools' => array_values(array_filter(
+                is_array($payload['live_tools'] ?? null)
+                    ? $payload['live_tools']
+                    : [],
+                static fn (mixed $tool): bool => is_string($tool),
             )),
         ];
     }

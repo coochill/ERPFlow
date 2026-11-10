@@ -223,7 +223,8 @@ Compose port mapping and must send:
 Authorization: Bearer <ETL_SERVICE_TOKEN>
 ```
 
-Start the ETL service with Docker Compose from the repository root:
+Start the ETL service and its Laravel API dependencies with Docker Compose
+from the repository root:
 
 ```powershell
 docker compose up -d etl
@@ -317,3 +318,38 @@ Known limitations include the Laravel endpoints' lack of search/status
 filters for the read-only listings and the existing MCP session manager
 one-shot lifecycle behavior when the same application lifespan is reused
 across tests.
+
+## AI assistant integration
+
+The Laravel `POST /api/ai/ask` endpoint keeps its existing public contract and
+now proxies to the protected ETL endpoint `/internal/assistant/ask`. ETL
+retrieves policy context, gives Gemini access to the ten read-only MCP tools,
+and returns policy citations plus `used_live_data` and `live_tools` metadata.
+MCP and Laravel credentials remain server-side.
+
+The internal assistant endpoint requires `ETL_SERVICE_TOKEN`. The ETL-hosted
+assistant dispatches through the registered MCP tools in-process by default,
+which avoids re-entering the stateful Streamable HTTP app from its own request
+handler. Set `MCP_CLIENT_MODE=http` to use the Streamable HTTP client
+explicitly, and set `MCP_CLIENT_URL` when that endpoint is non-default.
+Tool execution is capped at two Gemini rounds by default to prevent unbounded
+tool-calling loops. The default maximum is two rounds and is configurable
+with `GEMINI_MAX_TOOL_ROUNDS`.
+
+### Gemini usage controls
+
+Gemini generation requests are limited to 20 per accounting day by default.
+The guard counts every generation attempt, including failed attempts and each
+tool-calling round. Configure it with:
+
+- `GEMINI_DAILY_REQUEST_LIMIT` (default `20`)
+- `GEMINI_MAX_TOOL_ROUNDS` (default `2`)
+- `GEMINI_USAGE_TIMEZONE` (default `Asia/Manila`)
+- `GEMINI_USAGE_FILE` (default `/app/data/output/gemini_usage.json`)
+
+Reservations and safe Gemini usage metadata are stored in the usage file under
+an exclusive lock. The ETL Compose bind mount persists this file across
+container restarts, while the backend logs contain only timestamps, model
+names, request numbers, status, and token counts. Prompts, user messages,
+responses, and credentials are never logged. A corrupted or inaccessible
+counter fails closed rather than bypassing the limit.

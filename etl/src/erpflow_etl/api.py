@@ -22,6 +22,8 @@ from erpflow_rag.service import (
     answer_policy_question,
     retrieve_policy_chunks,
 )
+from erpflow_ai.service import answer_question
+from erpflow_ai.usage import GeminiDailyLimitExceeded
 app = FastAPI(
     title="ERPFlow ETL API",
     description="Internal inventory data import service.",
@@ -36,6 +38,10 @@ class RagRetrieveRequest(BaseModel):
 class RagAskRequest(BaseModel):
     question: str = Field(min_length=1, max_length=1000)
     top_k: int = Field(default=5, ge=1, le=10)
+
+
+class AssistantAskRequest(RagAskRequest):
+    pass
 
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
 MAX_PREVIEW_ROWS = 100
@@ -203,6 +209,11 @@ def ask_rag(request: RagAskRequest):
             detail="Policy knowledge base is unavailable.",
         ) from error
 
+    except GeminiDailyLimitExceeded as error:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=str(error),
+        ) from error
     except RuntimeError as error:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -210,6 +221,34 @@ def ask_rag(request: RagAskRequest):
         ) from error
 
     return result
+
+
+@app.post(
+    "/internal/assistant/ask",
+    dependencies=[Depends(require_service_token)],
+)
+async def ask_assistant(request: AssistantAskRequest):
+    """Generate a policy-grounded answer with optional live ERP data."""
+
+    question = request.question.strip()
+    if not question:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Question cannot be empty.",
+        )
+
+    try:
+        return await answer_question(question=question, top_k=request.top_k)
+    except GeminiDailyLimitExceeded as error:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=str(error),
+        ) from error
+    except RuntimeError as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Unable to generate an assistant answer.",
+        ) from error
 @app.post(
     "/internal/inventory/previews",
     dependencies=[Depends(require_service_token)],

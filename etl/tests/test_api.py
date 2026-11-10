@@ -217,7 +217,6 @@ def test_rag_retrieval_returns_policy_excerpts(client):
         "Who approves a purchase above $50,000?"
     )
     assert data["result_count"] > 0
-
     result = data["results"][0]
 
     assert result["policy_id"] == "NTC-PRC-001"
@@ -227,6 +226,63 @@ def test_rag_retrieval_returns_policy_excerpts(client):
     assert result["text"]
     assert result["score"] > 0
     assert result["matched_terms"]
+
+
+def test_combined_assistant_requires_service_token(client):
+    response = client.post(
+        "/internal/assistant/ask",
+        json={"question": "Show low-stock items."},
+    )
+
+    assert response.status_code == 401
+
+
+def test_combined_assistant_returns_live_data_metadata(client, monkeypatch):
+    async def mock_answer_question(**kwargs):
+        return {
+            "question": kwargs["question"],
+            "answer": "There are two low-stock items.",
+            "source_count": 0,
+            "sources": [],
+            "used_live_data": True,
+            "live_tools": ["get_low_stock_items"],
+        }
+
+    monkeypatch.setattr(
+        api,
+        "answer_question",
+        mock_answer_question,
+    )
+
+    response = client.post(
+        "/internal/assistant/ask",
+        headers=auth_headers(),
+        json={"question": "Show low-stock items.", "top_k": 3},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["used_live_data"] is True
+    assert response.json()["live_tools"] == ["get_low_stock_items"]
+
+
+def test_combined_assistant_reports_daily_gemini_limit(client, monkeypatch):
+    async def mock_answer_question(**kwargs):
+        raise api.GeminiDailyLimitExceeded
+
+    monkeypatch.setattr(
+        api,
+        "answer_question",
+        mock_answer_question,
+    )
+
+    response = client.post(
+        "/internal/assistant/ask",
+        headers=auth_headers(),
+        json={"question": "What is the inventory policy?"},
+    )
+
+    assert response.status_code == 429
+    assert "daily Gemini usage limit" in response.json()["detail"]
 
 
 def test_rag_retrieval_rejects_empty_question(client):

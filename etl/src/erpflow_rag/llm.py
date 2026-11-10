@@ -7,6 +7,12 @@ from functools import lru_cache
 from google import genai
 from google.genai import types
 
+from erpflow_ai.usage import (
+    GeminiDailyLimitExceeded,
+    complete_gemini_request,
+    reserve_gemini_request,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -37,14 +43,21 @@ def generate_answer(
     try:
         client = get_gemini_client()
 
-        response = client.models.generate_content(
-            model=model,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                system_instruction=system_instruction,
-                temperature=0.2,
-            ),
-        )
+        reservation = reserve_gemini_request(model)
+        try:
+            response = client.models.generate_content(
+                model=model,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction=system_instruction,
+                    temperature=0.2,
+                ),
+            )
+        except Exception:
+            complete_gemini_request(reservation, succeeded=False)
+            raise
+
+        complete_gemini_request(reservation, response, succeeded=True)
 
         answer = (response.text or "").strip()
 
@@ -55,7 +68,7 @@ def generate_answer(
 
         return answer
 
-    except GeminiGenerationError:
+    except (GeminiGenerationError, GeminiDailyLimitExceeded):
         raise
 
     except Exception as error:
