@@ -1,8 +1,13 @@
 import { useState } from 'react'
 import type { KeyboardEvent } from 'react'
-import { Bot, Check, FileText, MessageSquare, RotateCcw, Send } from 'lucide-react'
+import { Bot, Check, Database, FileText, MessageSquare, RotateCcw, Send } from 'lucide-react'
 import { askAssistant } from '../../services/aiAssistantService'
 import type { AssistantMessage, PolicySource } from '../../types/aiAssistant'
+
+import './AiAssistant.css'
+
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 function formatSourceValue(value: string | undefined, fallback = 'Not provided') {
   return value?.trim() || fallback
@@ -40,7 +45,6 @@ function AiAssistant() {
   const [question, setQuestion] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-
   async function submitQuestion() {
     const trimmedQuestion = question.trim()
 
@@ -63,6 +67,7 @@ function AiAssistant() {
           role: 'assistant',
           content: result.answer,
           sources: result.sources,
+          usedLiveData: result.used_live_data === true,
         },
       ])
     } catch (requestError) {
@@ -135,7 +140,23 @@ function AiAssistant() {
                     <><Bot size={14} /> ERPFlow Assistant</>
                   )}
                 </div>
-                <div className="assistant-message-content">{message.content}</div>
+                <div className="assistant-message-content">
+                  {message.role === 'assistant' ? (
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {message.content
+                        .replace(/&#x20;/gi, ' ')
+                        .replace(/&#32;/gi, ' ')
+                        .replace(/&nbsp;/gi, ' ')}
+                    </ReactMarkdown>
+                  ) : (
+                    message.content
+                  )}
+                </div>
+                {message.role === 'assistant' && message.usedLiveData && (
+                  <div className="assistant-live-data">
+                    <Database size={14} /> Includes live ERP data
+                  </div>
+                )}
                 {message.role === 'assistant' && message.sources.length > 0 && (
                   <div className="assistant-citations">
                     <div className="assistant-citations-heading">
