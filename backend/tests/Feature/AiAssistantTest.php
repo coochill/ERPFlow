@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Laravel\Sanctum\Sanctum;
@@ -10,8 +11,9 @@ use Tests\TestCase;
 
 class AiAssistantTest extends TestCase
 {
-    protected function setUp(): void
-    {
+    use RefreshDatabase;
+
+    protected function setUp(): void {
         parent::setUp();
 
         config([
