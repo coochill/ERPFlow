@@ -1,0 +1,151 @@
+SKU,Item Name,Quantity,Unit Price
+INV-1001,Wireless Mouse,120,19.99
+INV-1002,USB-C Cable 1m,350,6.50
+INV-1003,Mechanical Keyboard,45,89.00
+INV-1004,27 inch Monitor,18,229.99
+INV-1005,Laptop Stand,60,34.50
+INV-1006,Webcam HD,75,49.95
+INV-1007,Ethernet Cable 3m,210,4.25
+INV-1008,LED Desk Lamp,40,27.80
+INV-1009,Power Strip 6 Outlet,95,18.40
+INV-1010,External SSD 1TB,30,99.00
+INV-1011,Thermal Paste 4g,150,7.90
+INV-1012,Graphics Card Mid Range,8,379.00
+INV-1013,Ceramic Coffee Mug,200,5.75
+INV-1014,Stainless Water Bottle 500ml,180,12.50
+INV-1015,Notebook A5 Ruled,400,3.20
+INV-1016,Ballpoint Pen Blue Box,600,0.85
+INV-1017,Highlighter Set 4 Color,140,4.60
+INV-1018,Sticky Notes 3x3 Pad,320,2.10
+INV-1019,Stapler Heavy Duty,55,15.75
+INV-1020,Staples Box 5000,260,1.95
+INV-1021,File Folder Letter Size,500,0.35
+INV-1022,Whiteboard Marker Set,90,8.40
+INV-1023,Whiteboard Eraser,70,3.90
+INV-1024,Desk Organizer Mesh,65,16.20
+INV-1025,Office Chair Ergonomic,12,249.00
+INV-1026,Standing Desk Frame,7,325.00
+INV-1027,Monitor Arm Single,25,64.99
+INV-1028,Bluetooth Speaker Mini,88,29.99
+INV-1029,Over-Ear Headphones,52,79.00
+INV-1030,Earbuds Wireless,134,39.50
+INV-1031,Phone Charger 20W,210,14.99
+INV-1032,Lightning Cable 2m,175,9.80
+INV-1033,Screen Protector Glass,300,5.50
+INV-1034,Phone Case Clear,260,8.25
+INV-1035,Tablet Stylus,60,24.00
+INV-1036,Surge Protector Wall,110,13.40
+INV-1037,Printer Paper A4 Ream,420,6.80
+INV-1038,Toner Cartridge Black,34,58.90
+INV-1039,Ink Cartridge Color,48,34.25
+INV-1040,Label Maker Tape Roll,180,4.75
+INV-1041,Packing Tape 2 inch,290,2.45
+INV-1042,Bubble Mailer 6x9,400,0.95
+INV-1043,Shipping Box Medium,240,1.60
+INV-1044,Cable Ties Pack 500,500,3.10
+INV-1045,Velcro Strap Roll,130,5.60
+INV-1046,Hand Sanitizer 500ml,310,4.90
+INV-1047,Disinfectant Wipes 80ct,275,3.75
+INV-1048,Paper Towel Roll 2 Ply,190,6.25
+INV-1049,Trash Bags 13 Gal,150,9.99
+INV-1050,Microfiber Cloth 5pk,220,5.40
+INV-1051,First Aid Kit Small,45,12.90
+INV-1052,Safety Goggles,85,4.80
+INV-1053,Nitrile Work Gloves Box,120,11.25
+INV-1054,Hard Hat White,38,14.60
+INV-1055,N95 Dust Mask 10pk,210,13.80
+INV-1056,Rechargeable LED Flashlight,66,22.50
+INV-1057,AA Batteries 24pk,140,16.75
+INV-1058,AAA Batteries 24pk,135,15.90
+INV-1059,Extension Cord 25ft,58,19.45
+INV-1060,Duct Tape Silver,110,6.90
+INV-1061,Heavy Duty Zip Ties,400,4.15
+INV-1062,Cordless Drill 18V,14,129.00
+INV-1063,Screwdriver Set 30pc,42,27.40
+INV-1064,Adjustable Wrench 10in,60,11.80
+INV-1065,Tape Measure 25ft,95,8.60
+INV-1066,Aluminum Level 24in,33,16.90
+INV-1067,Paint Brush Set 5pc,78,9.35
+INV-1068,Assorted Sandpaper,150,7.20
+INV-1069,Wood Glue 16oz,88,6.45
+INV-1070,Shop Vacuum 6 Gal,9,89.99
+INV-1071,Garden Hose 50ft,27,34.60
+INV-1072,Watering Can 2 Gal,44,15.30
+INV-1073,Pruning Shears,56,13.95
+INV-1074,Potting Soil 1 cu ft,72,7.85
+INV-1075,Grass Seed 5lb,49,22.40
+INV-1076,Granular Fertilizer 10lb,64,18.75
+INV-1077,Ceramic Plant Pot 6in,105,6.10
+INV-1078,Hanging Bird Feeder,31,19.80
+INV-1079,Dry Dog Food 15lb,26,28.50
+INV-1080,Dog Leash 6ft,83,11.20
+INV-1081,Clumping Cat Litter 20lb,41,15.60
+INV-1082,Steel Pet Water Bowl,97,7.40
+INV-1083,Yoga Mat 6mm,38,24.90
+INV-1084,Resistance Bands Set,71,18.00
+INV-1085,Dumbbell 10lb Pair,29,32.00
+INV-1086,Speed Jump Rope,90,9.50
+INV-1087,Water Filter Pitcher,36,29.95
+INV-1088,Food Storage Containers 8pc,58,26.40
+INV-1089,Bamboo Cutting Board,74,17.25
+INV-1090,Chef Knife 8in,22,42.00
+INV-1091,Dish Soap 32oz,190,3.60
+INV-1092,Kitchen Sponges 6pk,230,3.20
+INV-1093,Laundry Detergent 100oz,84,14.80
+INV-1094,Dark Roast Coffee Beans 1lb,115,12.99
+INV-1095,Assorted Tea Box 25ct,130,5.25
+INV-1096,Instant Oatmeal Box,96,6.70
+INV-1097,Canned Tomatoes 28oz,310,2.30
+INV-1098,Extra Virgin Olive Oil 1L,62,14.50
+INV-1099,Penne Pasta 1lb,260,1.85
+INV-1100,Fine Sea Salt 26oz,150,3.40
+INV-1101,Wireless Keyboard,-5,24.99
+INV-1102,Laser Printer Drum,-2,119.00
+INV-1103,DisplayPort Cable,-12,9.75
+INV-1104,DDR4 Memory RAM 16GB,-3,54.00
+INV-1105,WiFi 6 Router,-4,129.00
+INV-1106,8 Port Network Switch,-6,44.50
+INV-1107,24 Port Patch Panel,-1,88.00
+INV-1108,Cat6 Cable 100ft,-9,42.30
+INV-1109,Keystone Jack,-15,2.85
+INV-1110,Fiber Optic Patch Cord,-20,11.40
+INV-1111,Glass Cleaning Spray,-30,3.95
+INV-1112,Mop Refill Head,-18,6.80
+INV-1113,Angle Broom,-11,12.25
+INV-1114,Dustpan Set,-8,9.10
+INV-1115,Small Bin Liners,-40,4.30
+INV-1116,Coffee Filters 100ct,-7,3.85
+INV-1117,Handheld Milk Frother,-13,21.99
+INV-1118,Electric Kettle 1.7L,-5,34.00
+INV-1119,2 Slice Toaster,-4,27.50
+INV-1120,Personal Blender,-6,39.95
+INV-1121,USB Bluetooth Adapter,40,-7.99
+INV-1122,Gaming Mouse Pad,55,-12.50
+INV-1123,HDMI Cable 2m,120,-8.75
+INV-1124,WiFi Smart Plug,65,-10.99
+INV-1125,Action Camera Mount,33,-6.40
+INV-1126,USB Microphone,19,-54.00
+INV-1127,Ring Light 12in,27,-29.95
+INV-1128,Compact Tripod,31,-22.10
+INV-1129,Memory Card 64GB,88,-11.25
+INV-1130,Multi Card Reader,70,-9.60
+INV-1131,,62,7.25
+INV-1132,,18,199.00
+INV-1133,,90,3.15
+INV-1134,,134,11.60
+INV-1135,,27,45.00
+INV-1136,,205,2.75
+INV-1137,,11,64.50
+INV-1138,,73,8.90
+INV-1139,,39,21.30
+INV-1140,,56,16.05
+INV-1141,Smart Thermostat,16,129.00
+INV-1141,Smart Thermostat,22,129.00
+INV-1142,Robot Vacuum,9,249.00
+INV-1142,Robot Vacuum,14,239.00
+INV-1143,Air Purifier HEPA,21,149.00
+INV-1143,Air Purifier HEPA,17,149.00
+INV-1144,Electric Toothbrush,48,59.99
+INV-1144,Electric Toothbrush,52,59.99
+INV-1145,Insulated Lunch Box,70,18.50
+INV-1145,Insulated Lunch Box,64,18.50
