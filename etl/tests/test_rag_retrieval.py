@@ -107,3 +107,55 @@ def test_purchase_threshold_question_ranks_threshold_section_first(chunks):
     assert results
     assert results[0].chunk.policy_id == "NTC-PRC-001"
     assert "4.1 Approval Thresholds" in results[0].chunk.section
+
+@pytest.mark.parametrize(
+    ("query", "expected_policy_id"),
+    [
+        (
+            "What is the procurement policy of ERPFlow?",
+            "NTC-PRC-001",
+        ),
+        (
+            "What are the approval requirements for purchase requests?",
+            "NTC-PRC-001",
+        ),
+        (
+            "What is the company inventory management policy?",
+            "NTC-INV-001",
+        ),
+        (
+            "What is the procedure for handling returned items?",
+            "NTC-INV-001",
+        ),
+        (
+            "What guidelines should employees follow when using AI in ERPFlow?",
+            "NTC-AI-001",
+        ),
+    ],
+)
+def test_broad_policy_questions_retrieve_expected_policy_in_top_three(
+    chunks, query, expected_policy_id
+):
+    results = search_chunks(query, chunks, top_k=3)
+
+    assert results
+    assert any(
+        result.chunk.policy_id == expected_policy_id
+        for result in results
+    )
+@pytest.mark.parametrize(
+    ("word", "expected"),
+    [
+        ("returned", "return"),
+        ("return", "return"),
+        ("returns", "return"),
+        ("returning", "return"),
+        ("items", "item"),
+        ("item", "item"),
+    ],
+)
+
+def test_tokenize_normalizes_common_word_forms(word, expected):
+    from erpflow_rag.retrieval import tokenize
+
+    assert tokenize(word) == [expected]

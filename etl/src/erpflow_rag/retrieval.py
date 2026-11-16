@@ -19,6 +19,8 @@ STOPWORDS = {
     "may", "of", "on", "or", "our", "should", "the", "their",
     "them", "there", "this", "to", "under", "we", "what", "when",
     "where", "which", "who", "with", "would",
+    "company", "employees", "follow", "guidelines",
+    "handling", "procedure", "requirements", "using",
 }
 
 
@@ -28,11 +30,23 @@ class RetrievalResult:
     score: float
     matched_terms: tuple[str, ...]
 
+def normalize_token(token: str) -> str:
+    """Normalize common inflected business terms."""
+    if token in {"returned", "returns", "returning"}:
+        return "return"
+
+    if token == "items":
+        return "item"
+
+    if token in {"onboard", "onboarding", "onboarded"}:
+        return "onboard"
+
+    return token
 
 def tokenize(text: str) -> list[str]:
     """Normalize text into searchable terms."""
     return [
-        token.replace(",", "")
+        normalize_token(token.replace(",", ""))
         for token in TOKEN_PATTERN.findall(text.lower())
         if token not in STOPWORDS
     ]
@@ -55,7 +69,7 @@ def search_chunks(
         return []
 
     tokenized_chunks = [
-        tokenize(f"{chunk.section} {chunk.text}")
+        tokenize(f"{chunk.title} {chunk.section} {chunk.text}")
         for chunk in chunks
     ]
     document_lengths = [len(tokens) for tokens in tokenized_chunks]
@@ -87,9 +101,11 @@ def search_chunks(
     is_purchase_approval_query = (
         asks_about_approval
         and "purchase" in query_lower
-        and has_money_amount
+        and (
+           has_money_amount
+           or "request" in query_lower
     )
-
+)
     for index, chunk in enumerate(chunks):
         frequencies = term_frequencies[index]
         document_length = document_lengths[index]
