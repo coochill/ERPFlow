@@ -9,6 +9,9 @@ use App\Http\Controllers\GoodsReceiptController;
 use App\Http\Middleware\EnsureEtlImportToken;
 use App\Http\Controllers\EtlImportController;
 use App\Http\Controllers\AiAssistantController;
+use App\Http\Controllers\DashboardController;
+
+Route::get('/dashboard', [DashboardController::class, 'show']);
 
 Route::post('/ai/ask', [AiAssistantController::class, 'ask'])
     ->middleware('auth:sanctum');

@@ -6,9 +6,11 @@ import PurchaseRequestsPage from '../../pages/PurchaseRequests/PurchaseRequests'
 import GoodsReceiving from '../../pages/GoodsReceiving/GoodsReceiving'
 import DataImport from '../../pages/DataImport/DataImport'
 import AiAssistant from '../../pages/AiAssistant/AiAssistant'
+import DashboardPage from '../../pages/Dashboard/Dashboard'
 
 type WorkspacePagesProps = {
   activePage: WorkspacePage
+  onPageChange: (page: WorkspacePage) => void
   onSummaryChange: (summary: {
     inventory: number
     suppliers: number
@@ -18,10 +20,11 @@ type WorkspacePagesProps = {
 
 function WorkspacePages({
   activePage,
+  onPageChange,
   onSummaryChange,
 }: WorkspacePagesProps) {
   const [visitedPages, setVisitedPages] = useState<Set<WorkspacePage>>(
-    new Set<WorkspacePage>(['inventory']),
+    new Set<WorkspacePage>(['dashboard']),
   )
   const [inventoryTotal, setInventoryTotal] = useState(0)
   const [supplierTotal, setSupplierTotal] = useState(0)
@@ -66,6 +69,12 @@ function WorkspacePages({
 
   return (
     <section className="page-content">
+      {visitedPages.has('dashboard') && (
+        <div style={{ display: activePage === 'dashboard' ? undefined : 'none' }}>
+          <DashboardPage onPageChange={onPageChange} />
+        </div>
+      )}
+
       <div style={{ display: activePage === 'inventory' ? undefined : 'none' }}>
         <InventoryPage
           onTotalChange={handleInventoryTotal}

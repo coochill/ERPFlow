@@ -6,7 +6,9 @@ type HeaderProps = {
 
 function Header({ activePage }: HeaderProps) {
   const pageLabel =
-    activePage === 'inventory'
+    activePage === 'dashboard'
+      ? 'Dashboard'
+      : activePage === 'inventory'
       ? 'Inventory'
       : activePage === 'suppliers'
         ? 'Suppliers'

@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 
 export type WorkspacePage =
+  | 'dashboard'
   | 'inventory'
   | 'suppliers'
   | 'purchases'
@@ -49,7 +50,14 @@ function Sidebar({
 
       <div className="nav-label">WORKSPACE</div>
       <nav className="nav-list">
-        <a className="nav-link" href="#overview">
+        <a
+          className={`nav-link ${activePage === 'dashboard' ? 'active' : ''}`}
+          href="#overview"
+          onClick={(event) => {
+            event.preventDefault()
+            onPageChange('dashboard')
+          }}
+        >
           <LayoutDashboard size={18} /> Overview
         </a>
         <a

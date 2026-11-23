@@ -5,7 +5,7 @@ import Sidebar, { type WorkspacePage } from './Sidebar'
 import WorkspacePages from './WorkspacePages'
 
 function Layout() {
-  const [activePage, setActivePage] = useState<WorkspacePage>('inventory')
+  const [activePage, setActivePage] = useState<WorkspacePage>('dashboard')
   const [inventoryTotal, setInventoryTotal] = useState(0)
   const [supplierTotal, setSupplierTotal] = useState(0)
   const [purchaseRequestTotal, setPurchaseRequestTotal] = useState(0)
@@ -43,6 +43,7 @@ function Layout() {
         <Header activePage={activePage} />
         <WorkspacePages
           activePage={activePage}
+          onPageChange={setActivePage}
           onSummaryChange={handleSummaryChange}
         />
       </main>
